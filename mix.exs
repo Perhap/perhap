@@ -26,13 +26,14 @@ defmodule Perhap.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :cowboy, :gproc]]
+    [applications: [:logger, :cowboy, :plug, :gproc]]
   end
 
   defp deps do
     [{:dialyxir, "~> 0.5", only: :dev, runtime: false},
      {:ex_doc, "~> 0.15.0", only: :dev, runtime: false},
-     {:cowboy, github: "ninenines/cowboy"},
+     {:cowboy, "~> 1.0.0"},
+     {:plug, "~> 1.0"},
      {:gproc, "~> 0.6.1"},
      {:json, "~> 1.0"},
      {:gen_stage, "~> 0.11.0"}]
