@@ -11,9 +11,16 @@ defmodule PerhapTest do
   @router_opts Perhap.Router.init([])
 
   defmodule PerhapFixture do
+    import Perhap
     use Perhap, app: :perhap_test
-    #assert is_list(config())
-    assert @app == :perhap_test
+
+    match "/two/", do: 1 + 1
+    match "/three/", do: 1 + 1 + 1
+  end
+
+  test "Receives allowed methods on option call to root" do
+    conn = conn(:options, "/") |> Perhap.Router.call(@router_opts)
+    assert (conn.resp_headers |> Map.new)["access-control-allow-headers"] =~ "GET PUT POST DELETE OPTIONS"
   end
 
   test "Receives an ACK on ping" do
@@ -27,6 +34,10 @@ defmodule PerhapTest do
     conn = conn(:get, "/doesnt-exist") |> Perhap.Router.call(@router_opts)
     assert conn.state == :sent
     assert conn.status == 404
+  end
+
+  test "Finds the test path" do
+    [{"/two/", {:+, [line: _], [1, 1]}} | _] = PerhapFixture.paths()
   end
 
 end
