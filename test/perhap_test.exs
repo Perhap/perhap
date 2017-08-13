@@ -1,6 +1,7 @@
 defmodule PerhapTest do
   use ExUnit.Case, async: true
   use Plug.Test
+  require PerhapTest.Fixture, as: Fixture
 
   @config [ network: [
             protocol: :http,
@@ -9,14 +10,6 @@ defmodule PerhapTest do
   Application.put_env(:perhap_test, :perhap, @config)
 
   @router_opts Perhap.Router.init([])
-
-  defmodule PerhapFixture do
-    import Perhap
-    use Perhap, app: :perhap_test
-
-    match "/two/", do: 1 + 1
-    match "/three/", do: 1 + 1 + 1
-  end
 
   test "Receives allowed methods on option call to root" do
     conn = conn(:options, "/") |> Perhap.Router.call(@router_opts)
@@ -37,7 +30,10 @@ defmodule PerhapTest do
   end
 
   test "Finds the test path" do
-    [{"/two/", {:+, [line: _], [1, 1]}} | _] = PerhapFixture.paths()
+    [
+      [context: :two, domain: {:mine, [single: "me", events: [:none]]}],
+      [context: :two, domain: {:ours, [model: "us", events: [:none]]}]
+    ] = Fixture.routes()
   end
 
 end

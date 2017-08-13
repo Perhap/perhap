@@ -9,10 +9,10 @@ defmodule Perhap do
     quote location: :keep do
       use Application
       use Plug.ErrorHandler
-      import Perhap.Paths
+      import Perhap.Context
       import unquote(__MODULE__)
 
-      Module.register_attribute __MODULE__, :paths, accumulate: true, persist: false
+      Module.register_attribute __MODULE__, :routes, accumulate: true, persist: false
 
       @app unquote(opts)[:app]
       @defaults [ network: [
@@ -58,17 +58,20 @@ defmodule Perhap do
     end
   end
 
-  defmacro __before_compile__(_env) do
-    quote do
-      def paths() do
-        @paths |> Enum.reverse
-      end
-    end
-
-    for {path, blocks} <- Perhap.Paths.collate_paths(@paths |> Enum.reverse) do
-      quote do
-        def match_path(unquote(path)), do: unquote(blocks)
+  defmacro context(context, domains) do
+    quote bind_quoted: [context: context, domains: domains] do
+      Enum.each domains, fn d ->
+        @routes context: context, domain: d
       end
     end
   end
+
+  defmacro __before_compile__(_env) do
+    quote do
+      def routes() do
+        @routes |> Enum.reverse
+      end
+    end
+  end
+
 end

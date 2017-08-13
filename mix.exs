@@ -19,6 +19,7 @@ defmodule Perhap.Mixfile do
      elixir: "~> 1.4",
      build_per_environment: false,
      consolidate_protocols: Mix.env != :test,
+     elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps()
@@ -54,4 +55,7 @@ defmodule Perhap.Mixfile do
      links: %{"GitHub" => "https://github.com/Perhap/perhap"},
      files: ~w(mix.exs README.md CHANGELOG.md lib)]
   end
+
+  defp elixirc_paths(:test), do: ["lib","test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

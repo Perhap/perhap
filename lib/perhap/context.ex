@@ -1,11 +1,4 @@
-defmodule Perhap.Paths do
-
-  defmacro match(path, do: block) do
-    quote bind_quoted: [path: path,
-                        block: Macro.escape(block, unquote: true)] do
-      @paths {path, block}
-    end
-  end
+defmodule Perhap.Context do
 
   def collate_paths(paths) do
     Enum.reduce(paths, %{}, fn({path, block}, acc) ->
