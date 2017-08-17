@@ -4,11 +4,11 @@ defmodule PerhapTest.Fixture do
 
   context :two,
     mine: [
-      single: "me",
-      events: [:none]
+      single: PerhapTest.Fixture.Mine,
+      events: [:an_event_type]
     ],
     ours: [
-      model: "us",
-      events: [:none]
+      model: PerhapTest.Fixture.Ours,
+      events: [:an_event_type, :another_event_type]
     ]
 end

@@ -27,17 +27,18 @@ defmodule Perhap.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :cowboy, :plug, :gproc]]
+    [applications: [:logger, :cowboy]]
   end
 
   defp deps do
-    [{:dialyxir, "~> 0.5", only: :dev, runtime: false},
-     {:ex_doc, "~> 0.15.0", only: :dev, runtime: false},
-     {:cowboy, "~> 1.0.0"},
-     {:plug, "~> 1.0"},
-     {:gproc, "~> 0.6.1"},
+    [{:cowboy, github: "ninenines/cowboy"},
+     {:ranch, github: "ninenines/ranch", ref: "1.4.0", override: true},
+     {:cowlib, github: "ninenines/cowlib", ref: "2.0.0-rc.1", override: true},
      {:json, "~> 1.0"},
-     {:gen_stage, "~> 0.11.0"}]
+     {:uuid, github: "okeuday/uuid"},
+     {:gun, github: "ninenines/gun", ref: "1.0.0-pre.3", runtime: false},
+     {:dialyxir, "~> 0.5", only: :dev, runtime: false},
+     {:ex_doc, "~> 0.15.0", only: :dev, runtime: false}]
      # {:ranch, github: "ninenines/ranch", ref: "1.4.0", override: true},
      # {:gun, github: "ninenines/gun", ref: "1.0.0-pre.3", runtime: false},
      # {:snappy, github: "fdmanana/snappy-erlang-nif"},

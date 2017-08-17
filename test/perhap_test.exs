@@ -1,39 +1,47 @@
 defmodule PerhapTest do
   use ExUnit.Case, async: true
-  use Plug.Test
+  import PerhapTest.Helper
   require PerhapTest.Fixture, as: Fixture
 
-  @config [ network: [
-            protocol: :http,
-            bind: {'0.0.0.0', 4500},
-            acceptors: System.schedulers_online * 2 ] ]
+  @config protocol: :http,
+          bind: "0.0.0.0",
+          port: 4499,
+          acceptors: System.schedulers_online * 2
   Application.put_env(:perhap_test, :perhap, @config)
 
-  @router_opts Perhap.Router.init([])
+  setup_all do
+    Fixture.start(nil, nil)
+    on_exit fn ->
+      :ok
+    end
+    []
+  end
 
   test "Receives allowed methods on option call to root" do
-    conn = conn(:options, "/") |> Perhap.Router.call(@router_opts)
-    assert (conn.resp_headers |> Map.new)["access-control-allow-headers"] =~ "GET PUT POST DELETE OPTIONS"
+    resp = options("/")
+    assert resp.status == 200
+    headers = Enum.into(resp.headers, %{})
+    assert Map.get(headers, "access-control-allow-methods", "") =~ "GET PUT POST DELETE OPTIONS"
   end
 
   test "Receives an ACK on ping" do
-    conn = conn(:get, "/ping") |> Perhap.Router.call(@router_opts)
-    assert conn.state == :sent
-    assert conn.status == 200
-    assert conn.resp_body == "ACK"
+    resp = get("/ping")
+    assert resp.status == 200
+    assert resp.body =~ "ACK"
   end
 
   test "Receives a 404 on a non-existent route" do
-    conn = conn(:get, "/doesnt-exist") |> Perhap.Router.call(@router_opts)
-    assert conn.state == :sent
-    assert conn.status == 404
+    resp = get("/doesnt-exist")
+    assert resp.status == 404
   end
 
-  test "Finds the test path" do
-    [
-      [context: :two, domain: {:mine, [single: "me", events: [:none]]}],
-      [context: :two, domain: {:ours, [model: "us", events: [:none]]}]
-    ] = Fixture.routes()
+  test "Finds the test routes" do
+    [ {route, handler, []} | _ ] = Fixture.routes()
+    assert {route, handler} == {:_, Perhap.RootHandler}
+  end
+
+  test "creates route functions" do
+
   end
 
 end

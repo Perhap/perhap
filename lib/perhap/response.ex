@@ -21,7 +21,7 @@ defmodule Perhap.Response do
     :cowboy_req.reply(status,
       %{"content-type" => "application/json",
         "access-control-allow-origin" => "*",
-        "x-bigsquid-crc32" => Integer.to_string(crc32)}, json, req0)
+        "x-perhap-crc32" => Integer.to_string(crc32)}, json, req0)
   end
 
   defp make(map) when is_map(map) do

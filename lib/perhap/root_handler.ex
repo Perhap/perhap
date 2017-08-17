@@ -1,8 +1,8 @@
-alias Perhap.Error, as: E
-alias Perhap.Response
-
 defmodule Perhap.RootHandler do
   use Perhap.Handler
+  alias Perhap.Error, as: E
+  alias Perhap.Response
+
   def init(req0, opts) do
     method = :cowboy_req.method(req0)
     case method == "OPTIONS" do
