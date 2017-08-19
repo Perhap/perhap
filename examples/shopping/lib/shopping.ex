@@ -30,17 +30,14 @@ defmodule Shopping do
       events: [:cart_created, :cart_emptied]
     ]
 
-    #   rewrite_event "/store/product_*/:cart_id" do
+    rewrite_event "/store/product_*/:cart_id",
+      {"/stats/cart_was_active/", %{cart_id: cart_id, timestamp: timestamp}}
+    #   rewrite_event "/store/checkout_started/:cart_id",
     #     {"/stats/cart_was_active/", %{cart_id: cart_id, timestamp: timestamp}}
-    #   end
-    #   rewrite_event "/store/checkout_started/:cart_id" do
-    #     {"/stats/cart_was_active/", %{cart_id: cart_id, timestamp: timestamp}}
-    #   end
-    #   rewrite_event "/store/checkout_finished/:cart_id" do
+    #   rewrite_event "/store/checkout_finished/:cart_id",
     #     {"/stats/cart_emptied/", %{cart_id: cart_id, timestamp: timestamp}}
-    #   end
     #
-    #   tick "/stats/minute_tick", every: [:minute]
+    tick "/stats/minute_tick", every: [:minute]
     #   tick "/stats/hour_tick", every: [:hour]
     #   tick "/stats/day_tick", every: [:day]
 

@@ -2,15 +2,16 @@ defmodule Perhap.Router do
 
   def make_event_path(%{ context: context,
                          event_type: event_type,
-                         model: model }) do
-    {"/#{context}/#{event_type}/:entity_id/:event_id", model, []}
+                         model: model,
+                         opts: opts}) do
+    {"/#{context}/#{event_type}/:entity_id/:event_id", model, opts}
   end
 
   def make_model_path(%{ context: context,
                          domain: domain,
                          model: model,
-                         single: single }) do
-    case single do
+                         opts: opts }) do
+    case Keyword.get(opts, :single) do
       true ->
         {"/#{context}/#{domain}/model", model, [single: true]}
       _ ->

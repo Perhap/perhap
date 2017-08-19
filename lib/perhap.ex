@@ -8,7 +8,6 @@ defmodule Perhap do
   defmacro __using__(opts) do
     quote location: :keep do
       use Application
-      alias Perhap.Router
       alias Perhap.PingHandler
       alias Perhap.StatsHandler
       alias Perhap.RootHandler
@@ -85,29 +84,58 @@ defmodule Perhap do
     end
   end
 
-  defmacro context(context, domains) do
-    quote bind_quoted: [context: context, domains: domains] do
-      Enum.each domains, fn {domain, spec} ->
-        model = Keyword.get(spec, :single, Keyword.get(spec, :model))
-        Enum.each Keyword.get(spec, :events), fn event ->
-          @routes Perhap.Router.make_event_path( %{ context: context,
-                                                    event_type: event,
-                                                    model: model })
-        end
-        @routes Perhap.Router.make_model_path( %{ context: context,
-                                                  domain: domain,
-                                                  model: model,
-                                                  single: Keyword.has_key?(spec, :single) })
-      end
-    end
-  end
-
   defmacro __before_compile__(_env) do
     quote do
       def routes() do
         @routes |> Enum.reverse
       end
     end
+  end
+
+  # Context macro and supporting
+
+  defmacro context(context, domains, opts \\ []) do
+    quote bind_quoted: [context: context, domains: domains, opts: opts] do
+      Enum.each (make_routes(context, domains, opts)),
+                 fn route ->
+                   @routes route
+                 end
+    end
+  end
+
+  def make_routes(context, domains, opts) do
+    make_event_routes(context, domains, opts) ++ make_model_routes(context, domains, opts)
+    |> List.flatten
+  end
+
+  defp make_event_routes(context, domains, opts) do
+    Enum.map domains, fn {_domain, spec} ->
+      model = Keyword.get(spec, :single, Keyword.get(spec, :model))
+      Enum.map Keyword.get(spec, :events), fn event ->
+        Perhap.Router.make_event_path( %{ context: context,
+                                          event_type: event,
+                                          model: model,
+                                          opts: opts })
+      end
+    end 
+  end
+
+  defp make_model_routes(context, domains, opts) do
+    Enum.map domains, fn {domain, spec} ->
+      model = Keyword.get(spec, :single, Keyword.get(spec, :model))
+      Perhap.Router.make_model_path( %{ context: context,
+                                        domain: domain,
+                                        model: model,
+                                        opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
+    end
+  end
+
+  # Event rewriting and supporting
+  defmacro rewrite_event(_path, {_repath, _model}) do
+  end
+
+  # Cron and supporting
+  defmacro tick(_path, _opts) do
   end
 
 end

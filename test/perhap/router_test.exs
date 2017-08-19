@@ -5,7 +5,8 @@ defmodule PerhapTest.Router do
     left = {"/c/e/:entity_id/:event_id", PerhapTest.Router, []}
     right = Perhap.Router.make_event_path( %{ context: "c",
                                               event_type: "e",
-                                              model: PerhapTest.Router })
+                                              model: PerhapTest.Router,
+                                              opts: [] })
     assert left == right
   end
 
@@ -20,7 +21,7 @@ defmodule PerhapTest.Router do
     right = Perhap.Router.make_model_path( %{ context: "c",
                                               domain: "d",
                                               model: PerhapTest.Router,
-                                              single: false })
+                                              opts: [single: false] })
     assert left == right
   end
 
@@ -29,7 +30,7 @@ defmodule PerhapTest.Router do
     right = Perhap.Router.make_model_path( %{ context: "c",
                                               domain: "d",
                                               model: PerhapTest.Router,
-                                              single: true })
+                                              opts: [single: true] })
     assert left == right
   end
 
