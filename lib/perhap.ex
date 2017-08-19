@@ -97,10 +97,7 @@ defmodule Perhap do
   @spec context(atom(), [domain: list(tuple())], [single: ( true | false )]) :: Macro.t
   defmacro context(context, domains, opts \\ []) do
     quote bind_quoted: [context: context, domains: domains, opts: opts] do
-      Enum.each (make_routes(context, domains, opts)),
-                 fn route ->
-                   @routes route
-                 end
+      for route <- (make_routes(context, domains, opts)), do: @routes route
     end
   end
 
