@@ -13,7 +13,7 @@ Ultimately, Perhap base will be in this repository, and you'll have your choice 
 
 Perhap is an event store and service framework. That means you can send it events, and it will share those events with services that have registered an interest in them so that the services can use those events to update their projections (or reductions).
 
-Perhap is "purely functional" in that events are immutable and services are implemented as pure functions.
+Perhap is "purely functional" in that events are immutable and services are implemented as pure functions in pretty much pure Elixir (i.e. there's virtually no framework code in your services, just business logic.)
 
 Perhap is inspired by domain driven design in that it implements a bounded context containing domain services that manage entity models that are created and updated based on domain events.
 
@@ -27,7 +27,7 @@ An *event* is something that happens, typically in the real world, and affects h
 
 A *model* is a representation of an entity within a domain.
 
-As an event store, Perhap can receive events, persist them, and deliver them. In its current form, it receives events by HTTP, persists them to a database like DynamoDB, Riak, or Cassandra, and delivers them either by HTTP or to a registered domain service.
+As an event store, Perhap can receive events, persist them, and deliver them. In its current form, it receives events by HTTP, persists them to a database like DynamoDB, Riak, or Cassandra, and delivers them to a registered domain service.
 
 As a DDD framework, Perhap can deliver events along with a persisted model to a domain service, which is expected to transform that model with those events, and return the transformed model along with any new events the service wants published. Perhap also allows clients to access those models by HTTP and subscribe to changes to a model over a web socket.
 
@@ -35,11 +35,11 @@ As a reactive system, Perhap is expected to have consistent response behaviors, 
 
 ### Perhap event store
 
-Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_context/:domain/:entity/:event_type/:event_id`, with arbitrary data.
+Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_context/:event_type/:entity_id/:event_id`, with arbitrary data.
 
 `:bounded_context` represents the name of a context. This context must be configured within Perhap and attached to an authentication source.
 
-`:domain` and `:event_type` work together to define the type of event. `:domain` is the primary domain service that will receive the event, though any domain within a bounded context can register to receive events of a given type from other domains. `:event_type` represents what kind of event occurred. Both `:domain` and `:event_type` are declared by the Perhap client, and are not configured within Perhap; any client authenticated within a bounded context may create events for arbitrary domains and of arbitrary types.
+`:event_type` represents what kind of event occurred. `:event_type` is declared by the Perhap client, and are not configured within Perhap; any client authenticated within a bounded context may create events of arbitrary types.
 
 `:entity` is the UUIDv4 ID of an entity within the bounded context. This ID is originally created by a client, not by Perhap. Perhap does not expect to know about (or create) an entity before receiving events related to an entity.
 
@@ -47,9 +47,11 @@ Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_conte
 
 Events are retrieved from Perhap by GETting them over HTTP by either `:event_id` or `:entity_id` in these formats:
 
-`perhap_server/event/:bounded_context/:event_id`
+`perhap_server/:bounded_context/:event_id/event` will retrieve an event by event_id.
 
-`perhap_server/events/:bounded_context/:entity_id`
+`perhap_server/:bounded_context/:entity_id/events` will retrieve all events for an entity.
+
+`perhap_server/:bounded_context/:domain/:entity_id/events` will retrieve all events within a given domain for an entity.
 
 ### Perhap framework
 
