@@ -8,6 +8,7 @@ defmodule Perhap do
   defmacro __using__(opts) do
     quote location: :keep do
       use Application
+      alias Perhap.Router
       alias Perhap.PingHandler
       alias Perhap.StatsHandler
       alias Perhap.RootHandler
@@ -86,9 +87,17 @@ defmodule Perhap do
 
   defmacro context(context, domains) do
     quote bind_quoted: [context: context, domains: domains] do
-      Enum.each domains, fn d ->
-        #@routes context: context, domain: d
-        :ok
+      Enum.each domains, fn {domain, spec} ->
+        model = Keyword.get(spec, :single, Keyword.get(spec, :model))
+        Enum.each Keyword.get(spec, :events), fn event ->
+          @routes Perhap.Router.make_event_path( %{ context: context,
+                                                    event_type: event,
+                                                    model: model })
+        end
+        @routes Perhap.Router.make_model_path( %{ context: context,
+                                                  domain: domain,
+                                                  model: model,
+                                                  single: Keyword.has_key?(spec, :single) })
       end
     end
   end
