@@ -2,7 +2,7 @@ defmodule PerhapTest.Router do
   use ExUnit.Case, async: true
 
   test "makes valid cowboy pathspecs for events" do
-    left = {"/c/e/:entity_id", PerhapTest.Router, []}
+    left = {"/c/e/:entity_id/:event_id", PerhapTest.Router, []}
     right = Perhap.Router.make_event_path( %{ context: "c",
                                               event_type: "e",
                                               model: PerhapTest.Router })

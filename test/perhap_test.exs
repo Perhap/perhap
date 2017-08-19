@@ -36,7 +36,6 @@ defmodule PerhapTest do
   end
 
   test "Finds the test routes" do
-    IO.inspect Fixture.routes()
     [ {route, handler, []} | _ ] = Fixture.routes()
     assert {route, handler} == {:_, Perhap.RootHandler}
   end

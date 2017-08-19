@@ -3,7 +3,7 @@ defmodule Perhap.Router do
   def make_event_path(%{ context: context,
                          event_type: event_type,
                          model: model }) do
-    {"/#{context}/#{event_type}/:entity_id", model, []}
+    {"/#{context}/#{event_type}/:entity_id/:event_id", model, []}
   end
 
   def make_model_path(%{ context: context,
