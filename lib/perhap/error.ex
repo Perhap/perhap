@@ -1,14 +1,14 @@
 defmodule Perhap.Error do
   @enforce_keys [:http_code, :code, :message]
-  defstruct [:http_code, :code, :message]
 
   @type t :: %Perhap.Error {
-    http_code: String.t,
+    http_code: ( 400 | 404 | 408 | 413 | 500 | 503 ),
     code:      String.t,
     message:   String.t
   }
+  defstruct [:http_code, :code, :message]
 
-  # @spec build_error(String.t, String.t, String.t) :: API.Error.t
+  @spec build_error(integer(), String.t, String.t) :: Perhap.Error.t
   defp build_error(http_code, code, message) do
     %Perhap.Error{http_code: http_code, code: code, message: message}
   end

@@ -22,7 +22,8 @@ defmodule Perhap.Mixfile do
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps()
+     deps: deps(),
+     dialyzer: dialyzer_options()
     ]
   end
 
@@ -59,4 +60,6 @@ defmodule Perhap.Mixfile do
 
   defp elixirc_paths(:test), do: ["lib","test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp dialyzer_options(), do: [plt_add_deps: :apps_direct, ignore_warnings: "dialyzer.ignore-warnings"]
 end
