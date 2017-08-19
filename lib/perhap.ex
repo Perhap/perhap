@@ -94,6 +94,7 @@ defmodule Perhap do
 
   # Context macro and supporting
 
+  @spec context(atom(), [domain: list(tuple())], [single: ( true | false )]) :: Macro.t
   defmacro context(context, domains, opts \\ []) do
     quote bind_quoted: [context: context, domains: domains, opts: opts] do
       Enum.each (make_routes(context, domains, opts)),
