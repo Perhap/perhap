@@ -1,6 +1,8 @@
 defmodule PerhapTest.Router do
   use ExUnit.Case, async: true
 
+  # Paths
+
   test "makes valid cowboy pathspecs for events" do
     left = {"/c/e/:entity_id/:event_id", PerhapTest.Router, []}
     right = Perhap.Router.make_event_path( %{ context: "c",
@@ -38,6 +40,11 @@ defmodule PerhapTest.Router do
     assert_raise FunctionClauseError, fn ->
       Perhap.Router.make_model_path( %{} )
     end
+  end
+
+  # Rewriting
+
+  test "" do
   end
 
 end

@@ -17,6 +17,10 @@ defmodule PerhapTest do
     []
   end
 
+  test "Cowboy is alive" do
+    assert :ok == Application.ensure_started(:cowboy)
+  end
+
   test "Receives allowed methods on option call to root" do
     resp = options("/")
     assert resp.status == 200
