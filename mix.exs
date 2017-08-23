@@ -16,7 +16,7 @@ defmodule Perhap.Mixfile do
      version: @version,
      description: description(),
      package: package(),
-     elixir: "~> 1.4",
+     elixir: "~> 1.5",
      build_per_environment: false,
      consolidate_protocols: Mix.env != :test,
      elixirc_paths: elixirc_paths(Mix.env),
@@ -28,7 +28,7 @@ defmodule Perhap.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :cowboy]]
+    [applications: [:logger, :cowboy, :libcluster, :swarm]]
   end
 
   defp deps do
@@ -38,6 +38,8 @@ defmodule Perhap.Mixfile do
      {:json, "~> 1.0"},
      {:uuid, github: "okeuday/uuid"},
      {:gun, github: "ninenines/gun", ref: "1.0.0-pre.3", runtime: false},
+     {:libcluster, "~> 2.1"},
+     {:swarm, "~> 3.0"},
      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
      {:ex_doc, "~> 0.15.0", only: :dev, runtime: false}]
      # {:ranch, github: "ninenines/ranch", ref: "1.4.0", override: true},
