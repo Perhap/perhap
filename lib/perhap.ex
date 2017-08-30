@@ -8,6 +8,7 @@ defmodule Perhap do
   defmacro __using__(opts) do
     quote location: :keep do
       use Application
+      require Logger
       alias Perhap.PingHandler
       alias Perhap.StatsHandler
       alias Perhap.RootHandler
@@ -16,8 +17,8 @@ defmodule Perhap do
 
       @app unquote(opts)[:app]
       @defaults protocol: :http,
-                bind: "0.0.0.0",
-                port: 4500,
+                bind: unquote(opts)[:bind] || "0.0.0.0",
+                port: unquote(opts)[:port] || 4500,
                 acceptors: System.schedulers_online * 2,
                 max_connections: 65536,
                 backlog: 65536
@@ -31,12 +32,25 @@ defmodule Perhap do
 
       def call(_, _), do: true
 
-      def start(_type, _args) do
+      def start(:web, args) do
         import Supervisor.Spec
+        Logger.debug("Starting Cowboy listener for #{__MODULE__} on " <>
+                     "#{config(:protocol) |> to_string}://#{config(:bind)}:#{config(:port)}.")
         { start_function, transport_opts, protocol_opts } = get_cowboy_opts()
-        { :ok, _ } = start_function.(:api_listener, transport_opts, protocol_opts)
-        children = [ supervisor(Task.Supervisor, [[name: Perhap.TaskSupervisor]]) ]
-        Supervisor.start_link(children, [strategy: :one_for_one, name: Perhap.Supervisor])
+        { :ok, _ } = start_function.(__MODULE__, transport_opts, protocol_opts)
+        start(:noweb, args)
+      end
+      def start(:noweb, args) do
+        Perhap.Supervisor.start_link(args)
+        {:ok, self()}
+      end
+      def start(_type, args) do
+        start(:web, args)
+      end
+
+      def start_service({module, entity_id}) do
+        {:ok, pid} = Swarm.register_name({module, entity_id}, Perhap.Supervisor, :register, [{module, entity_id}])
+        Swarm.join(:perhap, pid)
       end
 
       def stop(_state) do
@@ -46,14 +60,32 @@ defmodule Perhap do
       def config do
         [ app: @app ] ++
         ( @defaults
-          |> Keyword.merge(Application.get_env(@app, :perhap)) )
+          |> Keyword.merge(Application.get_all_env(:perhap)) )
       end
 
       def config(key) do
         Keyword.get(config(), key)
       end
 
-      defp get_cowboy_opts() do
+     defp parse_address(address) when is_binary(address) do
+        {:ok, parsed} = :inet.parse_address(address |> to_charlist)
+        parsed
+      end
+      defp parse_address(address) when is_list(address) do
+        {:ok, parsed} = :inet.parse_address(address)
+        parsed
+      end
+
+    end
+  end
+
+  defmacro __before_compile__(_env) do
+    quote do
+      def routes() do
+        @routes |> Enum.reverse
+      end
+
+      def get_cowboy_opts() do
         transport_opts =  [ ip:              parse_address(config(:bind)),
                             port:            config(:port),
                             num_acceptors:   config(:acceptors),
@@ -70,24 +102,6 @@ defmodule Perhap do
           :http  -> { &:cowboy.start_clear/3, transport_opts, protocol_opts }
           :https -> { &:cowboy.start_tls/3, transport_opts ++ ssl_opts, protocol_opts }
         end
-      end
-
-      defp parse_address(address) when is_binary(address) do
-        {:ok, parsed} = :inet.parse_address(address |> to_charlist)
-        parsed
-      end
-      defp parse_address(address) when is_list(address) do
-        {:ok, parsed} = :inet.parse_address(address)
-        parsed
-      end
-
-    end
-  end
-
-  defmacro __before_compile__(_env) do
-    quote do
-      def routes() do
-        @routes |> Enum.reverse
       end
     end
   end
@@ -110,10 +124,11 @@ defmodule Perhap do
     Enum.map domains, fn {_domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
       Enum.map Keyword.get(spec, :events), fn event ->
-        Perhap.Router.make_event_path( %{ context: context,
-                                          event_type: event,
-                                          model: model,
-                                          opts: opts })
+        Perhap.Router.make_event_pathspec( %{ context: context,
+                                              event_type: event,
+                                              model: model,
+                                              handler: Perhap.Router,
+                                              opts: opts })
       end
     end 
   end
@@ -121,10 +136,11 @@ defmodule Perhap do
   defp make_model_routes(context, domains, opts) do
     Enum.map domains, fn {domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
-      Perhap.Router.make_model_path( %{ context: context,
-                                        domain: domain,
-                                        model: model,
-                                        opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
+      Perhap.Router.make_model_pathspec( %{ context: context,
+                                            domain: domain,
+                                            model: model,
+                                            handler: Perhap.Router,
+                                            opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
     end
   end
 

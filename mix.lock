@@ -3,8 +3,13 @@
   "dialyxir": {:hex, :dialyxir, "0.5.1", "b331b091720fd93e878137add264bac4f644e1ddae07a70bf7062c7862c4b952", [:mix], []},
   "earmark": {:hex, :earmark, "1.2.3", "206eb2e2ac1a794aa5256f3982de7a76bf4579ff91cb28d0e17ea2c9491e46a4", [:mix], []},
   "ex_doc": {:hex, :ex_doc, "0.15.1", "d5f9d588fd802152516fccfdb96d6073753f77314fcfee892b15b6724ca0d596", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, optional: false]}]},
+  "gen_state_machine": {:hex, :gen_state_machine, "2.0.0", "f3bc7d961e4cd9f37944b379137e25fd063feffc42800bed69197fd1b78b3151", [:mix], []},
   "gun": {:git, "https://github.com/ninenines/gun.git", "3aab5ef99b98f618f701510d76bcf639b915794f", [ref: "1.0.0-pre.3"]},
   "json": {:hex, :json, "1.0.2", "fa75ed4f355cd4ab468c25588171f8002a7274d3d5fb376c18822ddfc7c33f1f", [:mix], []},
+  "libcluster": {:hex, :libcluster, "2.2.2", "9082bdd1179b82721e44f2fea635c316252f5f7ebbeaef082213e7998f0ab5d0", [:mix], [{:poison, "~> 3.0", [hex: :poison, optional: false]}]},
+  "libring": {:hex, :libring, "1.2.1", "8e8a40a71df2f09819d5033781fff922299a2f5f15f1cd391c54938556a85e72", [:mix], []},
+  "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], []},
   "quickrand": {:hex, :quickrand, "1.7.1", "b0c2a41d08c955f055c44bed357660de443cd9068a33aba530076910b7333659", [:rebar3], []},
   "ranch": {:git, "https://github.com/ninenines/ranch.git", "55c2a9d623454f372a15e99721a37093d8773b48", [ref: "1.4.0"]},
+  "swarm": {:hex, :swarm, "3.0.5", "c54ead44ca5f879959899f325f0e6b904e1a219faecb24ca4e55aad1fe38fecc", [:mix], [{:gen_state_machine, "~> 2.0", [hex: :gen_state_machine, optional: false]}, {:libring, "~> 1.0", [hex: :libring, optional: false]}]},
   "uuid": {:git, "https://github.com/okeuday/uuid.git", "8f8e8516296b0594705ab5851c687e80d4c0a38a", []}}

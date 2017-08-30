@@ -131,3 +131,19 @@ Perhap is a [reactive system](http://www.reactivemanifesto.org/) and is intended
 
 *Event driven* Perhap's core abstraction is the event, both internally and externally. These asynchronous messages support an architecture that is inherently location transparent, loosely coupled, and isolated.
 
+
+
+
+```
+Code.require_file("test/support/perhapfixture/domain.exs")
+PerhapFixture.Domain.start(:_,:_)
+PerhapFixture.Domain.start_service({PerhapFixture.Domain.Domain1, :test1})
+
+PerhapFixture.Domain.Domain1.child_spec(:test)
+{:ok, supe} = Perhap.Supervisor.start_link
+Supervisor.start_child(Perhap.Supervisor, [PerhapFixture.Domain.Domain1])
+Supervisor.start_child(supe, [PerhapFixture.Domain.Domain1])
+Supervisor.start_child(supe, PerhapFixture.Domain.Domain1.child_spec(:test1))
+Swarm.register_name({PerhapFixture.Domain.Domain1, :single}, Perhap.Supervisor, :register, [{PerhapFixture.Domain.Domain1, :single}])
+PerhapFixture.Domain.start_service({PerhapFixture.Domain.Domain1, :single})
+```

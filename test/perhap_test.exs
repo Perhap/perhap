@@ -1,13 +1,8 @@
 defmodule PerhapTest do
   use ExUnit.Case, async: true
+  use PerhapTest.Helper, port: 4499
   import PerhapTest.Helper
-  require PerhapTest.Fixture, as: Fixture
-
-  @config protocol: :http,
-          bind: "0.0.0.0",
-          port: 4499,
-          acceptors: System.schedulers_online * 2
-  Application.put_env(:perhap_test, :perhap, @config)
+  require PerhapFixture, as: Fixture
 
   setup_all do
     Fixture.start(nil, nil)

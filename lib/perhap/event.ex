@@ -1,6 +1,6 @@
 defmodule Perhap.Event do
 
-  @type t :: %__MODULE__{ event_id: String.t,
+  @type t :: %__MODULE__{ event_id: Perhap.Event.UUIDv1.t,
                           data: map(),
                           metadata: Perhap.Event.Metadata.t
                         }

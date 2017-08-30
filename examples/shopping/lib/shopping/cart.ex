@@ -1,5 +1,6 @@
 defmodule Shopping.Cart do
-  alias Perhap.Event, as: Event
+  use Perhap.Domain
+  import Perhap.Event
 
   @type t :: %__MODULE__{ id: String.t, items: list(any), total: number() }
   defstruct [:id, items: [], total: 0.00]
@@ -22,7 +23,7 @@ defmodule Shopping.Cart do
     case empty_cart?(model) do
       true -> { model,
                 [ { "/stats/cart_emptied",
-                    %{ id: model.id, timestamp: Event.timestamp() } }]}
+                    %{ id: model.id, timestamp: Perhap.Event.timestamp() } }]}
       _ -> { model, [] }
     end
   end
