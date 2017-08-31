@@ -124,11 +124,11 @@ defmodule Perhap do
     Enum.map domains, fn {_domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
       Enum.map Keyword.get(spec, :events), fn event ->
-        Perhap.Router.make_event_pathspec( %{ context: context,
-                                              event_type: event,
-                                              model: model,
-                                              handler: Perhap.Router,
-                                              opts: opts })
+        Perhap.Path.make_event_pathspec( %Perhap.Path.Pathspec{ context: context,
+                                                                event_type: event,
+                                                                model: model,
+                                                                handler: Perhap.Router,
+                                                                opts: opts })
       end
     end 
   end
@@ -136,11 +136,11 @@ defmodule Perhap do
   defp make_model_routes(context, domains, opts) do
     Enum.map domains, fn {domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
-      Perhap.Router.make_model_pathspec( %{ context: context,
-                                            domain: domain,
-                                            model: model,
-                                            handler: Perhap.Router,
-                                            opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
+      Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: context,
+                                                              domain: domain,
+                                                              model: model,
+                                                              handler: Perhap.Router,
+                                                              opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
     end
   end
 

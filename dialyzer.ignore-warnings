@@ -1,4 +1,5 @@
-:0: Unknown function 'Elixir.JSON':'encode!'/1
+:0: Unknown function 'Elixir.Poison':'decode!'/1
+:0: Unknown function 'Elixir.Poison':'encode!'/1
 :0: Unknown function uuid:get_v1/1
 :0: Unknown function uuid:get_v1_time/1
 :0: Unknown function uuid:get_v4/0

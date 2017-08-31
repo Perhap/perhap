@@ -1,12 +1,46 @@
+defmodule Perhap.Event.Metadata do
+  @type t :: %__MODULE__{ event_id: Perhap.Event.UUIDv1.t,
+                          entity_id: String.t,
+                          scheme: String.t,
+                          host: String.t,
+                          port: integer(),
+                          path: String.t,
+                          context: String.t,
+                          type: atom(),
+                          user_id: String.t,
+                          ip_addr: String.t,
+                          timestamp: Integer }
+  defstruct event_id: "",
+            entity_id: "",
+            scheme: "",
+            host: "",
+            port: nil,
+            path: "",
+            context: "",
+            type: :none,
+            user_id: "",
+            ip_addr: "",
+            timestamp: nil
+end
+
+defmodule Perhap.Event.UUIDv1 do
+  @type t :: String.t
+end
+
+defmodule Perhap.Event.UUIDv4 do
+  @type t :: String.t
+end
+
 defmodule Perhap.Event do
 
   @type t :: %__MODULE__{ event_id: Perhap.Event.UUIDv1.t,
                           data: map(),
-                          metadata: Perhap.Event.Metadata.t
-                        }
+                          metadata: Perhap.Event.Metadata.t }
   defstruct event_id: "",
             data: %{},
             metadata: %Perhap.Event.Metadata{}
+
+
 
   @uuid_v1_regex    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
   @time_order_regex "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -86,4 +120,7 @@ defmodule Perhap.Event do
       :exit, _ -> false
     end
   end
+
+  # Todo: Persist
+  def save(event), do: event
 end

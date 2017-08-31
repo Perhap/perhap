@@ -65,7 +65,7 @@ defmodule Perhap.Error do
   @spec format(atom) :: iodata
   def format(atom) when is_atom(atom) do
     error = make(atom)
-    JSON.encode!(%{
+    Poison.encode!(%{
       type: error.code,
       message: error.message})
   end

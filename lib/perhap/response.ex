@@ -25,11 +25,11 @@ defmodule Perhap.Response do
   end
 
   defp make(map) when is_map(map) do
-    json = JSON.encode!(map)
+    json = Poison.encode!(map)
     makeCRC(json)
   end
   defp make(list) when is_list(list) do
-    json = JSON.encode!(list)
+    json = Poison.encode!(list)
     makeCRC(json)
   end
   defp make(json) when is_binary(json) do

@@ -13,8 +13,8 @@ defmodule Shopping do
   context :store,
     cart: [
       model: Shopping.Cart,
-      events: [:product_added,
-               :product_removed,
+      events: [:item_added,
+               :item_removed,
                :cart_emptied,
                :checkout_started,
                :checkout_finished]
@@ -30,7 +30,7 @@ defmodule Shopping do
       events: [:cart_created, :cart_emptied]
     ]
 
-    # rewrite_event "/store/product_*/:cart_id",
+    # rewrite_event "/store/item_*/:cart_id",
     #   {"/stats/cart_was_active/", %{cart_id: cart_id, timestamp: timestamp}}
     #   rewrite_event "/store/checkout_started/:cart_id",
     #     {"/stats/cart_was_active/", %{cart_id: cart_id, timestamp: timestamp}}
