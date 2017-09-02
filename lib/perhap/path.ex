@@ -15,20 +15,20 @@ defmodule Perhap.Path do
 
   @spec make_event_pathspec(Pathspec.t) :: list({ String.t, module(), Pathspec.opts })
   def make_event_pathspec(%Pathspec{ context: context,
-                                              event_type: event_type,
-                                              model: model,
-                                              handler: handler,
-                                              opts: opts}) do
+                                     event_type: event_type,
+                                     model: model,
+                                     handler: handler,
+                                     opts: opts}) do
     [ { "/#{context}/#{event_type}/:entity_id/:event_id", handler, Keyword.merge(opts, [model: model]) },
-      { "/#{context}/:event_id", handler, opts } ]
+      { "/#{context}/:event_id", handler, Keyword.merge(opts, [model: model]) } ]
   end
 
   @spec make_model_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }
   def make_model_pathspec(%Pathspec{ context: context,
-                                                   domain: domain,
-                                                   model: model,
-                                                   handler: handler,
-                                                   opts: opts }) do
+                                     domain: domain,
+                                     model: model,
+                                     handler: handler,
+                                     opts: opts }) do
     case Keyword.get(opts, :single) do
       true ->
         { "/#{context}/#{domain}/model",

@@ -32,7 +32,7 @@ defmodule Perhap.Domain do
       # (CompileError) test/support/perhaptest_fixture.exs:17: spec for undefined function reduce/1
       # Arity 1? Nah.
       def reducer(_event_type, model, _event) do
-        Logger.error("No reducer defined in module #{__MODULE__}.")
+        Logger.error("[perhap] No reducer defined in module #{__MODULE__}.")
         { model, [] }
       end
 
@@ -45,8 +45,8 @@ defmodule Perhap.Domain do
 
       # Setup
 
-      def terminate(_, _) do
-        Logger.debug("#{__MODULE__}.terminate")
+      def terminate(reason, state) do
+        super(reason, state)
       end
 
       # Callbacks
@@ -55,8 +55,10 @@ defmodule Perhap.Domain do
         %{ super(arg) | id: arg }
       end
 
-      def start_link(name) do
-        GenServer.start_link(__MODULE__, [name])
+      def init(state) do
+        Logger.debug("[perhap] #{__MODULE__}.init with initial state #{inspect(state)}")
+        Process.flag(:trap_exit, true)
+        {:ok, state}
       end
 
       # Calls and Casts for Perhap
@@ -108,11 +110,9 @@ defmodule Perhap.Domain do
 
   defmacro __before_compile__(_env) do
     quote do
-      def init(name) do
-        Logger.debug("#{__MODULE__}.init (#{name})")
-        Process.flag(:trap_exit, true)
-        IO.inspect {:ok, @initial_state}
-        {:ok, @initial_state}
+      def start_link(name) do
+        Logger.debug("[perhap] #{__MODULE__}.start_link with name #{inspect(name)}")
+        GenServer.start_link(__MODULE__, @initial_state)
       end
     end
   end

@@ -135,15 +135,7 @@ Perhap is a [reactive system](http://www.reactivemanifesto.org/) and is intended
 
 
 ```
-Code.require_file("test/support/perhapfixture/domain.exs")
-PerhapFixture.Domain.start(:_,:_)
-PerhapFixture.Domain.start_service({PerhapFixture.Domain.Domain1, :test1})
-
-PerhapFixture.Domain.Domain1.child_spec(:test)
-{:ok, supe} = Perhap.Supervisor.start_link
-Supervisor.start_child(Perhap.Supervisor, [PerhapFixture.Domain.Domain1])
-Supervisor.start_child(supe, [PerhapFixture.Domain.Domain1])
-Supervisor.start_child(supe, PerhapFixture.Domain.Domain1.child_spec(:test1))
-Swarm.register_name({PerhapFixture.Domain.Domain1, :single}, Perhap.Supervisor, :register, [{PerhapFixture.Domain.Domain1, :single}])
-PerhapFixture.Domain.start_service({PerhapFixture.Domain.Domain1, :single})
+Code.require_file("test/support/domain_fixture.exs")
+DomainFixture.start(:_,:_)
+DomainFixture.start_service({DomainFixture.Domain1, :test1})
 ```

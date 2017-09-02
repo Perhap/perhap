@@ -1,12 +1,13 @@
 defmodule PerhapTest.Domain do
+
   use ExUnit.Case, async: true
   use PerhapTest.Helper, port: 4498
   import PerhapTest.Helper
-  require PerhapFixture.Domain, as: Fixture
+  require DomainFixture, as: Fixture
 
   setup_all do
     Fixture.start(nil, nil)
-    {:ok, pid} = GenServer.start_link(PerhapFixture.Domain.Domain1, 0)
+    {:ok, pid} = Fixture.start_service({Fixture.Domain1, [:domain1]})
     on_exit fn ->
       :ok
     end
@@ -21,12 +22,12 @@ defmodule PerhapTest.Domain do
     event = %Perhap.Event{ event_id: Perhap.Event.get_uuid_v1(),
                            data: %{},
                            metadata: %Perhap.Event.Metadata{} }
-    { :noreply, state } = PerhapFixture.Domain.Domain1.handle_cast({:reduce, [event]}, 0)
+    { :noreply, state } = Fixture.Domain1.handle_cast({:reduce, [event]}, 0)
     assert {:reply, { :ok, 1 }, 1} ==
-      PerhapFixture.Domain.Domain1.handle_call({:retrieve, []}, nil, state)
+      Fixture.Domain1.handle_call({:retrieve, []}, nil, state)
   end
 
-  test "Register a domain service" do
-    Perhap.Supervisor.register({PerhapFixture.Domain.Domain1, [:domain1]})
+  test "Register a domain service", context do
+    refute Swarm.Registry.get_by_pid(context[:pid]) == :undefined
   end
 end

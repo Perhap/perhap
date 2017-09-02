@@ -1,14 +1,28 @@
 defmodule Perhap.EventHandler do
-  require Logger
+  use Perhap.Handler
 
-  @read_length 1048576
-  @timeout 1000
 
   # event_posted |> save_event |> respond_to_event |> dispatch_event |> save_model |> clean_up
 
-  @spec event_posted(:cowboy_req.req(), Perhap.Event.t) :: {:ok, :cowboy_req.req(), String.t}
-                                                           | {:error, :cowboy_req.req(), atom()}
-  def event_posted(conn, _opts) do
+  def handle("GET", conn, state) do
+    {:ok, conn |> event_requested(state), state}
+  end
+  def handle("POST", conn, state) do
+    # Todo: not correct!
+    conn2 = conn |> event_posted(state) |> save_event |> respond_to_event
+    Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
+    {:ok, conn2, state}
+  end
+
+  @spec event_requested(:cowboy_req.req(), any()) :: :cowboy_req.req()
+  def event_requested(conn, _state) do
+    Perhap.Response.send(conn, Perhap.Error.make(:operation_not_implemented))
+    # Todo: get_event_from_store
+  end
+
+  @spec event_posted(:cowboy_req.req(), any()) ::
+    {:ok, :cowboy_req.req(), String.t} | {:error, :cowboy_req.req(), atom()}
+  def event_posted(conn, _state) do
     case read_body(conn) do
       {:ok, conn2, body} -> {:ok, conn2, body}
       {:timeout, conn2, _body} ->  {:error, conn2, :request_timeout}
@@ -19,7 +33,7 @@ defmodule Perhap.EventHandler do
     save_event_to_db(conn, body)
   end
   def save_event(error = {:error, _conn, reason}) do
-    Logger.error("[perhap] Unable to read event from body: #{reason |> to_string}")
+    Logger.error("[perhap] Unable to read event from body: #{inspect(reason)}")
     error
   end
 
@@ -27,7 +41,7 @@ defmodule Perhap.EventHandler do
     Perhap.Response.send(conn, 204)
     ok
   end
-  def respond_to_event(error = {:error, conn, reason}) do
+  def respond_to_event({:error, conn, reason}) do
     Perhap.Response.send(conn, Perhap.Error.make(reason))
     {:error, reason}
   end
@@ -47,12 +61,6 @@ defmodule Perhap.EventHandler do
   def clean_up({:ok, _model}), do: Logger.debug("[perhap] Saved model to model store")
   def clean_up({:error, reason}), do: Logger.error("[perhap] Unable to save model to model store: #{reason}")
 
-
-  @spec event_requested(:cowboy_req.req(), String.t) :: :cowboy_req.req()
-  def event_requested(conn, _opts) do
-    Perhap.Response.send(conn, Perhap.Error.make(:operation_not_implemented))
-    # get_event_from_store
-  end
 
   defp read_body(conn), do: read_body(conn, "")
 	defp read_body(conn, acc) do

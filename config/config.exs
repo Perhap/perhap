@@ -1,5 +1,9 @@
 use Mix.Config
 
+config :perhap,
+  eventstore: Perhap.Adapters.EventStore.Memory,
+  modelstore: Perhap.Adapters.ModelStore.Memory
+
 config :ssl, protocol_version: :"tlsv1.2"
 
 config :logger,
@@ -21,4 +25,5 @@ config :libcluster,
               config: [hosts: [:"perhap1@127.0.0.1"] ]]
   ]
 
-config :swarm, debug: true
+config :swarm,
+  sync_nodes_timeout: 1_000

@@ -4,12 +4,12 @@ defmodule PerhapTest.Path do
   # Paths
 
   test "makes valid cowboy pathspecs for events" do
-    left = [ {"/c/e/:entity_id/:event_id", Perhap.Router, [model: PerhapTest.Router]},
-             {"/c/:event_id", Perhap.Router, []} ]
+    left = [ {"/c/e/:entity_id/:event_id", Perhap.Handler, [model: PerhapTest.Model]},
+             {"/c/:event_id", Perhap.Handler, [model: PerhapTest.Model]} ]
     right = Perhap.Path.make_event_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                         event_type: "e",
-                                                                        model: PerhapTest.Router,
-                                                                        handler: Perhap.Router,
+                                                                        model: PerhapTest.Model,
+                                                                        handler: Perhap.Handler,
                                                                         opts: [] })
     assert left == right
   end
@@ -21,21 +21,21 @@ defmodule PerhapTest.Path do
   end
 
   test "makes valid cowboy pathspecs for models not single" do
-    left = {"/c/d/:entity_id/model", Perhap.Router, [single: false, model: PerhapTest.Router]}
+    left = {"/c/d/:entity_id/model", Perhap.Handler, [single: false, model: PerhapTest.Model]}
     right = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                         domain: "d",
-                                                                        model: PerhapTest.Router,
-                                                                        handler: Perhap.Router,
+                                                                        model: PerhapTest.Model,
+                                                                        handler: Perhap.Handler,
                                                                         opts: [single: false] })
     assert left == right
   end
 
   test "makes valid cowboy pathspecs for single models" do
-    left = {"/c/d/model", Perhap.Router, [model: PerhapTest.Router, single: true]}
+    left = {"/c/d/model", Perhap.Handler, [model: PerhapTest.Model, single: true]}
     right = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                         domain: "d",
-                                                                        model: PerhapTest.Router,
-                                                                        handler: Perhap.Router,
+                                                                        model: PerhapTest.Model,
+                                                                        handler: Perhap.Handler,
                                                                         opts: [single: true] })
     assert left == right
   end

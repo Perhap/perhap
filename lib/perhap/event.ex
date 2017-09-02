@@ -1,11 +1,11 @@
 defmodule Perhap.Event.Metadata do
   @type t :: %__MODULE__{ event_id: Perhap.Event.UUIDv1.t,
-                          entity_id: String.t,
+                          entity_id: Perhap.Event.UUIDv4.t,
                           scheme: String.t,
                           host: String.t,
                           port: integer(),
                           path: String.t,
-                          context: String.t,
+                          context: atom(),
                           type: atom(),
                           user_id: String.t,
                           ip_addr: String.t,
@@ -16,8 +16,8 @@ defmodule Perhap.Event.Metadata do
             host: "",
             port: nil,
             path: "",
-            context: "",
-            type: :none,
+            context: nil,
+            type: nil,
             user_id: "",
             ip_addr: "",
             timestamp: nil
@@ -40,10 +40,11 @@ defmodule Perhap.Event do
             data: %{},
             metadata: %Perhap.Event.Metadata{}
 
-
-
   @uuid_v1_regex    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
   @time_order_regex "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+  # Todo: Persist
+  def save(event), do: event
 
   # Timestamps and unique integers
   @spec timestamp() :: integer
@@ -121,6 +122,4 @@ defmodule Perhap.Event do
     end
   end
 
-  # Todo: Persist
-  def save(event), do: event
 end

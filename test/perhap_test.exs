@@ -39,8 +39,10 @@ defmodule PerhapTest do
     assert {route, handler} == {:_, Perhap.RootHandler}
   end
 
-  test "creates route functions" do
-
+  test "GETs an event" do
+    resp = get("/two/event_id")
+    # Todo: Implement GETting events
+    assert resp.status == 500
   end
 
 end

@@ -1,73 +1,172 @@
 defmodule Perhap do
   @moduledoc """
-  Documentation for Perhap.
+  # Perhap
 
-  `use Perhap, app: MyApp`
+  Perhap is a framework for building reactive systems using domain driven design ("reactive domain driven design" or "rDDD".)
+
+  ## Usage
+  
+  Include Perhap in your application:
+
+  ```
+  defmodule MyApp do
+    use Perhap, app: my_app
+    ...
+  ```
+
+  Then, specify at least one bounded context with at least one domain service, and tell Perhap what events you want:
+
+  ```
+  context :my_bounded_context,
+    domain: [ model: MyApp.MyDomainService,
+              events: [:myevent1, :myevent2] ]
+  ```
+
+  Perhap will generate routes for POSTing events, retrieving events, and retrieving models. Your domain service will receive the events and update a model, returning a tuple with the transformed model and a list of new events.
+
+  In your domain service, include Perhap.Domain, set your initial model state, and implement a `reducer` function.
+
+  ```
+  defmodule MyApp.MyDomainService do
+    use Perhap.Domain
+    @initial_state 0
+
+    def reducer({:myevent1, model, event}) do
+      model + 1
+    end
+    ...
+  ```
+
+  To interact with Perhap at a basic level:
+  
+  * POST events to `http[s]://your_server.tld/your_context/your_event_type/your_entity_id/your_event_id`, where `your_context` is a context you've defined, `your_event_type` is an event type your domain service(s) care about, `your_entity_id` is a UUIDv4 identifier, and `your_event_id` is a UUIDv1 identifier.
+  * GET models from `http[s]://your_server.tld/your_context/your_domain_service/your_entity_id`, where `your_context` is a context you've defined, `your_domain_service` is a domain service you specified, and `your_entity_id` is one of your UUIDv4 identifiers.
+
+  ## Configuration
+
+  `use Perhap, options` where options is a keyword list
+
+  * `app:` The name of the application.
+  * `protocol:` Override the default protocol (http).
+  * `listen:` Override the default listen address (127.0.0.1).
+  * `port:` Override the default listen port (4580).
+  * `auth:` The module providing authentication.
+  * `eventstore:` The module providing event persistence.
+  * `modelstore:` The module providing model persistence.
+
+  In addition to the options in the `use Perhap` statement, these options can be set in `config.exs`:
+
+  * `cacertfile:` path to the cacertfile
+  * `certfile:` path to the certfile
+  * `keyfile:` path to the keyfile
+
+  Also can be set using the system environment:
+
+  * `PERHAP_PROTOCOL` - `http` or `https`
+  * `PERHAP_BIND` - dot-quad notation
+  * `PERHAP_PORT` - port number
+  * `PERHAP_CACERTFILE` - path to cacertfile
+  * `PERHAP_CERTFILE` - path to certfile
+  * `PERHAP_KEYFILE` - path to keyfile
   """
 
   defmacro __using__(opts) do
     quote location: :keep do
       use Application
+      use Supervisor
       require Logger
-      alias Perhap.PingHandler
-      alias Perhap.StatsHandler
-      alias Perhap.RootHandler
 
       import unquote(__MODULE__)
 
       @app unquote(opts)[:app]
-      @defaults protocol: :http,
-                bind: unquote(opts)[:bind] || "0.0.0.0",
-                port: unquote(opts)[:port] || 4500,
-                acceptors: System.schedulers_online * 2,
-                max_connections: 65536,
-                backlog: 65536
+      @config protocol: unquote(opts)[:protocol] || :http,
+              listen: unquote(opts)[:listen] || "127.0.0.1",
+              port: unquote(opts)[:port] || 4580,
+              max_connections: 65536,
+              backlog: 65536,
+              event_store: unquote(opts)[:eventstore] || Perhap.EventStore.Memory,
+              model_store: unquote(opts)[:modelstore] || Perhap.ModelStore.Memory
 
       Module.register_attribute __MODULE__, :routes, accumulate: true, persist: false
-      @routes { :_, RootHandler, [] }
-      @routes { "/stats", StatsHandler, [] }
-      @routes { "/ping", PingHandler, [] }
+      @routes { :_, Perhap.RootHandler, [] }
+      @routes { "/stats", Perhap.StatsHandler, []}
+      @routes { "/ping", Perhap.PingHandler, [] }
 
       @before_compile unquote(__MODULE__)
 
       def call(_, _), do: true
 
       def start(:web, args) do
-        import Supervisor.Spec
         Logger.debug("Starting Cowboy listener for #{__MODULE__} on " <>
-                     "#{config(:protocol) |> to_string}://#{config(:bind)}:#{config(:port)}.")
+                     "#{config(:protocol) |> to_string}://#{config(:listen)}:#{config(:port)}.")
         { start_function, transport_opts, protocol_opts } = get_cowboy_opts()
         { :ok, _ } = start_function.(__MODULE__, transport_opts, protocol_opts)
         start(:noweb, args)
       end
       def start(:noweb, args) do
-        Perhap.Supervisor.start_link(args)
+        config() |> Enum.each(fn {k, v} -> Application.put_env(@app, k, v, [:persistent]) end)
+        Supervisor.start_link(__MODULE__, args, name: __MODULE__)
+        #Perhap.Supervisor.start_link(args)
         {:ok, self()}
       end
       def start(_type, args) do
         start(:web, args)
       end
 
-      def start_service({module, entity_id}) do
-        {:ok, pid} = Swarm.register_name({module, entity_id}, Perhap.Supervisor, :register, [{module, entity_id}])
+      def init(_arg) do
+        Supervisor.init([Perhap.Dispatcher], strategy: :one_for_one)
+      end
+
+      def start_service({module, name}) do
+        {:ok, pid} = Swarm.register_name({module, name}, Supervisor, :start_child, [__MODULE__, apply(module, :child_spec, [name])])
         Swarm.join(:perhap, pid)
+        {:ok, pid}
       end
 
       def stop(_state) do
         :cowboy.stop_listener(:api_listener)
       end
 
-      def config do
+      def config() do
         [ app: @app ] ++
-        ( @defaults
-          |> Keyword.merge(Application.get_all_env(:perhap)) )
+        ( @config
+          |> Keyword.merge(Application.get_all_env(:perhap))
+          |> Keyword.merge(system_environment()) )
       end
 
       def config(key) do
         Keyword.get(config(), key)
       end
 
-     defp parse_address(address) when is_binary(address) do
+      defp system_environment() do
+      [ case System.get_env("PERHAP_PROTOCOL") do
+          "https" -> [ protocol: :https ]
+          "http"  -> [ protocol: :http ]
+          _       -> nil
+        end,
+        case System.get_env("PERHAP_LISTEN") do
+          nil     -> nil
+          address -> [ listen: address ]
+        end,
+        case System.get_env("PERHAP_PORT") do
+          nil  -> nil
+          port -> [ port: port |> String.to_integer ]
+        end,
+        case System.get_env("PERHAP_CACERTFILE") do
+          nil  -> nil
+          cert -> [ cacertfile: cert ]
+        end,
+        case System.get_env("PERHAP_CERTFILE") do
+          nil  -> nil
+          cert -> [ certfile: cert ]
+        end,
+        case System.get_env("PERHAP_KEYFILE") do
+          nil -> nil
+          key -> [ keyfile: key ]
+        end ] |> Enum.filter(fn x -> x end) |> List.flatten
+      end
+
+      defp parse_address(address) when is_binary(address) do
         {:ok, parsed} = :inet.parse_address(address |> to_charlist)
         parsed
       end
@@ -86,9 +185,9 @@ defmodule Perhap do
       end
 
       def get_cowboy_opts() do
-        transport_opts =  [ ip:              parse_address(config(:bind)),
+        transport_opts =  [ ip:              parse_address(config(:listen)),
                             port:            config(:port),
-                            num_acceptors:   config(:acceptors),
+                            num_acceptors:   config(:acceptors) || System.schedulers_online * 2,
                             max_connections: config(:max_connections),
                             backlog:         config(:backlog) ]
         ssl_opts       =  [ cacertfile:      config(:cacertfile),
@@ -127,7 +226,7 @@ defmodule Perhap do
         Perhap.Path.make_event_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                 event_type: event,
                                                                 model: model,
-                                                                handler: Perhap.Router,
+                                                                handler: Perhap.EventHandler,
                                                                 opts: opts })
       end
     end 
@@ -139,7 +238,7 @@ defmodule Perhap do
       Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                               domain: domain,
                                                               model: model,
-                                                              handler: Perhap.Router,
+                                                              handler: Perhap.ModelHandler,
                                                               opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
     end
   end

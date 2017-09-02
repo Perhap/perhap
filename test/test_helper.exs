@@ -1,5 +1,5 @@
-Code.require_file("./support/perhapfixture.exs", __DIR__)
-Code.require_file("./support/perhapfixture/domain.exs", __DIR__)
+Code.require_file("./support/perhap_fixture.exs", __DIR__)
+Code.require_file("./support/domain_fixture.exs", __DIR__)
 ExUnit.start()
 
 defmodule PerhapTest.Helper do
