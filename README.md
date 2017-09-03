@@ -3,7 +3,7 @@ Perhap is an functional, rDDD (reactive domain driven design) event store and se
 
 ## Project status
 
-**Perhap is not currently ready for *your* production use.** It is being used in production, but we don't recommend you do that yet unless you're willing to dig deep into source code when something doesn't work the way you expect.
+**Perhap is not ready for production use.** It is being used in production, but we don't recommend you do that yet unless you're willing to dig deep into source code when something doesn't work the way you expect.
 
 Before we comfortably call this production ready, we'll have tens or hundreds of millions of events behind us, and be maintaining models for tens or hundreds of thousands of entities, all in production.
 
@@ -51,7 +51,7 @@ Events are retrieved from Perhap by GETting them over HTTP by either `:event_id`
 
 `perhap_server/:bounded_context/:entity_id/events` will retrieve all events for an entity.
 
-`perhap_server/:bounded_context/:domain/:entity_id/events` will retrieve all events within a given domain for an entity.
+`perhap_server/:bounded_context/events` will retrieve all events within a given context.
 
 ### Perhap framework
 
@@ -130,12 +130,3 @@ Perhap is a [reactive system](http://www.reactivemanifesto.org/) and is intended
 *Elastic* Perhap's API, database back end, and reducers are designed to push any contention points or bottlenecks down to the level of an individual entity within a bounded context, which is then managed as back pressure. As a framework, Perhap runs domain services (reducers) as separate processes only in response to an event, and the process is terminated when the reduction is complete. Perhap is fully event driven, making monitoring easy both on a standard level (analytics around events and models are provided out of the box) and custom level (domain specific modelling of events and services requires only deploying another reducer and subscribing to relevant system or domain events.)
 
 *Event driven* Perhap's core abstraction is the event, both internally and externally. These asynchronous messages support an architecture that is inherently location transparent, loosely coupled, and isolated.
-
-
-
-
-```
-Code.require_file("test/support/domain_fixture.exs")
-DomainFixture.start(:_,:_)
-DomainFixture.start_service({DomainFixture.Domain1, :test1})
-```
