@@ -12,8 +12,8 @@ defmodule Perhap.EventHandler do
       conn |> read_event(state) |> envelope_event |> validate_event |> save_event
       Perhap.Response.send(conn, 204)
     rescue
-      reason in RuntimeError -> 
-        Perhap.Response.send(conn, Perhap.Error.make(reason))
+      any ->
+        Perhap.Response.send(conn, Perhap.Error.make(any.message))
     end
     #Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
     {:ok, conn, state}
@@ -30,7 +30,7 @@ defmodule Perhap.EventHandler do
   def read_event(conn, _state) do
     case read_body(conn) do
       {:ok, conn2, body} -> {:ok, conn2, body}
-      {:timeout, _conn2, _body} -> raise(RuntimeError, :request_timeout)
+      {:timeout, _conn2, _body} -> raise(RuntimeError, message: :request_timeout)
     end
   end
 
@@ -54,14 +54,14 @@ defmodule Perhap.EventHandler do
   def validate_event(event) do
     case Perhap.Event.validate(event) do
       :ok -> event
-      {:invalid, _reason} -> raise(RuntimeError, :validation)
+      {:invalid, _reason} -> raise(RuntimeError, message: :validation)
     end
   end
 
   def save_event(event) do
     case Perhap.Event.save_event!(event) do
       {:ok, event} -> event
-      {:error, _reason} -> raise(RuntimeError, :service_unavailable)
+      {:error, _reason} -> raise(RuntimeError, message: :service_unavailable)
     end
   end
 
