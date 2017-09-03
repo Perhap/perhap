@@ -10,9 +10,13 @@ defmodule Perhap.Handler do
       @timeout 1000
 
       def init(req0, state) do
-        method = :cowboy_req.method(req0)
-        bindings = :cowboy_req.bindings(req0)
-        {:ok, handle(method, req0, state), state}
+        try do
+          method = :cowboy_req.method(req0)
+          {:ok, handle(method, req0, state), state}
+        rescue 
+          any ->
+            Perhap.Response.send(req0, Perhap.Error.make(any.message))
+        end
       end
 
       def terminate(reason, request, state, module) do
