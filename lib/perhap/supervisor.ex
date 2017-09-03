@@ -10,6 +10,10 @@ defmodule Perhap.Supervisor do
     Supervisor.init([Perhap.Dispatcher], strategy: :one_for_one)
   end
 
+  def stop() do
+    Supervisor.stop(__MODULE__)
+  end
+
   def register({module, name}) do
     Supervisor.start_child(__MODULE__, apply(module, :child_spec, [name]))
   end

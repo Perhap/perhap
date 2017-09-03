@@ -1,11 +1,13 @@
-Code.require_file("./support/perhap_fixture.exs", __DIR__)
-Code.require_file("./support/domain_fixture.exs", __DIR__)
+Code.require_file("./support/fixture.exs", __DIR__)
+Fixture.start()
 ExUnit.start()
 
 defmodule PerhapTest.Helper do
 
   defmacro __using__(opts) do
     quote location: :keep do
+      use ExUnit.Case, async: true
+      require Fixture
 
       @port unquote(opts)[:port]
 
@@ -42,5 +44,20 @@ defmodule PerhapTest.Helper do
         end
       end
     end
+  end
+
+  def make_random_event(), do: make_random_event(%Perhap.Event.Metadata{})
+  def make_random_event(%Perhap.Event.Metadata{} = metadata) do
+    event_id = metadata.event_id || Perhap.Event.get_uuid_v1()
+    %Perhap.Event{
+      event_id: event_id,
+      data: %{:random_number => :rand.uniform(1000)},
+      metadata: %{
+        metadata |
+          event_id: event_id,
+          entity_id: metadata.entity_id || Perhap.Event.get_uuid_v4(),
+          type: metadata.type || :random_event,
+          timestamp: metadata.timestamp || Perhap.Event.timestamp() }
+    }
   end
 end

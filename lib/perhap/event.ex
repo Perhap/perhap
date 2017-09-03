@@ -10,16 +10,16 @@ defmodule Perhap.Event.Metadata do
                           user_id: String.t,
                           ip_addr: String.t,
                           timestamp: Integer }
-  defstruct event_id: "",
-            entity_id: "",
-            scheme: "",
-            host: "",
+  defstruct event_id: nil,
+            entity_id: nil,
+            scheme: nil,
+            host: nil,
             port: nil,
-            path: "",
+            path: nil,
             context: nil,
             type: nil,
-            user_id: "",
-            ip_addr: "",
+            user_id: nil,
+            ip_addr: nil,
             timestamp: nil
 end
 
@@ -40,11 +40,53 @@ defmodule Perhap.Event do
             data: %{},
             metadata: %Perhap.Event.Metadata{}
 
-  @uuid_v1_regex    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+  # Not used @uuid_v1_regex    "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
   @time_order_regex "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-  # Todo: Persist
-  def save(event), do: event
+  @spec validate(t) :: :ok | { :invalid, String.t }
+  def validate(event) do
+    try do
+      %Perhap.Event{
+        :event_id => event_id,
+        :data => (%{} = _data),
+        :metadata => (%Perhap.Event.Metadata{} = metadata)
+      } = event
+      if !is_uuid_v1?(event_id), do: raise("Invalid event_id")
+      if !is_uuid_v4?(metadata.entity_id), do: raise("Invalid entity_id")
+      if !is_atom(metadata.context), do: raise("Invalid context")
+      :ok
+    rescue
+      MatchError -> {:invalid, "Invalid event struct"}
+      e in RuntimeError -> {:invalid, e.message}
+    end
+  end
+
+  def save_event(event) do
+    case validate(event) do
+      :ok ->
+        eventstore = Application.get_env(:perhap, :eventstore)
+        case apply(eventstore, :put_event, [event]) do
+          :ok -> {:ok, event}
+          error -> error
+        end
+      error -> error
+    end
+  end
+
+  def retrieve_event(event_id) do
+    eventstore = Application.get_env(:perhap, :eventstore)
+    apply(eventstore, :get_event, [event_id])
+  end
+
+  def retrieve_events(context) do
+    eventstore = Application.get_env(:perhap, :eventstore)
+    apply(eventstore, :get_events, [context])
+  end
+
+  def retrieve_events(context, entity_id) do
+    eventstore = Application.get_env(:perhap, :eventstore)
+    apply(eventstore, :get_events, [context, entity_id])
+  end
 
   # Timestamps and unique integers
   @spec timestamp() :: integer
@@ -57,7 +99,7 @@ defmodule Perhap.Event do
   @spec get_uuid_v1() :: String.t
   def get_uuid_v1() do
     { uuid, _state } = :uuid.get_v1(:uuid.new(self(), :erlang))
-    :uuid.uuid_to_string(uuid)
+    :uuid.uuid_to_string(uuid) |> to_string
   end
 
   @spec is_uuid_v1?(charlist() | binary()) :: true | false
@@ -108,7 +150,7 @@ defmodule Perhap.Event do
   # UUID v4
   @spec get_uuid_v4() :: String.t
   def get_uuid_v4() do
-    :uuid.get_v4() |> :uuid.uuid_to_string
+    :uuid.get_v4() |> :uuid.uuid_to_string |> to_string
   end
 
   @spec is_uuid_v4?(charlist()|binary()) :: true|false

@@ -3,15 +3,14 @@ defmodule Perhap.Mixfile do
   require Logger
 
   @version "0.0.1-dev"
-  {:ok, system_version} = Version.parse(System.version)
-  @elixir_version "#{system_version.major}.#{system_version.minor}.#{system_version.patch}"
+  # {:ok, system_version} = Version.parse(System.version)
+  # @elixir_version "#{system_version.major}.#{system_version.minor}.#{system_version.patch}"
 
   def version do
     @version
   end
 
   def project do
-    Logger.debug("Perhap #{@version} using Elixir #{@elixir_version}")
     [app: :perhap,
      version: @version,
      description: description(),

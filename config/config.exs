@@ -1,15 +1,16 @@
 use Mix.Config
 
 config :perhap,
-  eventstore: Perhap.Adapters.EventStore.Memory,
-  modelstore: Perhap.Adapters.ModelStore.Memory
+  eventstore: Perhap.Adapters.Eventstore.Memory,
+  modelstore: Perhap.Adapters.Modelstore.Memory
 
 config :ssl, protocol_version: :"tlsv1.2"
 
 config :logger,
   backends: [:console],
   utc_log: true,
-  compile_time_purge_level: :debug
+  compile_time_purge_level: :debug,
+  level: :error
 
 config :logger, :access_log,
   metadata: [:application, :module, :function],

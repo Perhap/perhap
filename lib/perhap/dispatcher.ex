@@ -3,7 +3,7 @@ defmodule Perhap.Dispatcher do
   require Logger
 
   @spec dispatch(term(), Perhap.Event.t, any()) :: { :noreply, any() }
-  def dispatch(child, event, opts) do
+  def dispatch(child, event, _opts) do
     GenServer.cast(child, {:dispatch, event})
   end
 
@@ -15,7 +15,7 @@ defmodule Perhap.Dispatcher do
     super(request, from, state)
   end
 
-  def handle_cast({:dispatch, event, opts}, state) do
+  def handle_cast({:dispatch, _event, _opts}, state) do
     {:noreply, state}
   end
 

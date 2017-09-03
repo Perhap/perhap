@@ -112,7 +112,11 @@ defmodule Perhap.Domain do
     quote do
       def start_link(name) do
         Logger.debug("[perhap] #{__MODULE__}.start_link with name #{inspect(name)}")
-        GenServer.start_link(__MODULE__, @initial_state)
+        GenServer.start_link(__MODULE__, @initial_state, name: name)
+      end
+
+      def stop(name) do
+        GenServer.stop(name)
       end
     end
   end

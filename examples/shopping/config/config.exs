@@ -3,7 +3,8 @@
 use Mix.Config
 
 config :perhap,
-  port: 9000
+  port: 9000,
+  eventstore: Doesnt.Exist
 
 config :logger,
   backends: [:console],

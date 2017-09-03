@@ -84,8 +84,8 @@ defmodule Perhap do
               port: unquote(opts)[:port] || 4580,
               max_connections: 65536,
               backlog: 65536,
-              event_store: unquote(opts)[:eventstore] || Perhap.EventStore.Memory,
-              model_store: unquote(opts)[:modelstore] || Perhap.ModelStore.Memory
+              eventstore: unquote(opts)[:eventstore] || Perhap.Adapters.Eventstore.Memory,
+              modelstore: unquote(opts)[:modelstore] || Perhap.Adapters.Modelstore.Memory
 
       Module.register_attribute __MODULE__, :routes, accumulate: true, persist: false
       @routes { :_, Perhap.RootHandler, [] }
@@ -100,31 +100,44 @@ defmodule Perhap do
         Logger.debug("Starting Cowboy listener for #{__MODULE__} on " <>
                      "#{config(:protocol) |> to_string}://#{config(:listen)}:#{config(:port)}.")
         { start_function, transport_opts, protocol_opts } = get_cowboy_opts()
-        { :ok, _ } = start_function.(__MODULE__, transport_opts, protocol_opts)
+        start_function.(__MODULE__, transport_opts, protocol_opts)
         start(:noweb, args)
       end
       def start(:noweb, args) do
         config() |> Enum.each(fn {k, v} -> Application.put_env(@app, k, v, [:persistent]) end)
+        eventstore = Application.get_env(:perhap, :eventstore)
         Supervisor.start_link(__MODULE__, args, name: __MODULE__)
-        #Perhap.Supervisor.start_link(args)
+        start_service(Perhap.Dispatcher)
+        start_service(eventstore)
         {:ok, self()}
       end
-      def start(_type, args) do
-        start(:web, args)
+      def start() do
+        start(:web, nil)
       end
 
       def init(_arg) do
-        Supervisor.init([Perhap.Dispatcher], strategy: :one_for_one)
+        Supervisor.init([], strategy: :one_for_one)
       end
 
-      def start_service({module, name}) do
+      @spec start_service(module(), term()) :: {:ok, pid()}
+      def start_service(module, name) do
         {:ok, pid} = Swarm.register_name({module, name}, Supervisor, :start_child, [__MODULE__, apply(module, :child_spec, [name])])
         Swarm.join(:perhap, pid)
         {:ok, pid}
       end
 
+      def start_service(module) do
+        # no name given so use the module as name
+        start_service(module, module)
+      end
+
+      def stop_service(name) do
+        Supervisor.terminate_child(__MODULE__, name)
+      end
+
       def stop(_state) do
         :cowboy.stop_listener(:api_listener)
+        Supervisor.stop()
       end
 
       def config() do

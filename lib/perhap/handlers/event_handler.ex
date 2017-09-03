@@ -76,7 +76,7 @@ defmodule Perhap.EventHandler do
 	end
 
 	defp save_event_to_db(conn, body) do
-    case Perhap.Event.save(%Perhap.Event{ event_id: get_req(conn, :event_id),
+    case Perhap.Event.save_event(%Perhap.Event{ event_id: get_req(conn, :event_id),
                                           data: get_event_data(body),
                                           metadata: get_event_metadata(conn) }) do
 			%Perhap.Event{} = event -> {:ok, conn, event}

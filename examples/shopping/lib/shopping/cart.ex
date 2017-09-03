@@ -11,7 +11,8 @@ defmodule Shopping.Cart do
                         | :checkout_finished )
   @type event_data :: %{ type: event_type, item: String.t, quantity: number(), price: number() }
 
-  @initial_state %__MODULE__{id: "", items: []}
+  #@initial_state %__MODULE__{id: "", items: []}
+  @initial_state %{}
 
   @spec reducer(event_type, t, Perhap.Event.t) :: { t, list(Perhap.Event.t) }
   def reducer(:item_added, model, %{data: event_data}) do

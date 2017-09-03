@@ -1,19 +1,13 @@
 defmodule PerhapTest do
-  use ExUnit.Case, async: true
   use PerhapTest.Helper, port: 4499
-  import PerhapTest.Helper
-  require PerhapFixture, as: Fixture
 
   setup_all do
-    Fixture.start(nil, nil)
+    # Fixture.start(nil, nil)
     on_exit fn ->
+      # Fixture.stop()
       :ok
     end
     []
-  end
-
-  test "Cowboy is alive" do
-    assert :ok == Application.ensure_started(:cowboy)
   end
 
   test "Receives allowed methods on option call to root" do
@@ -40,9 +34,8 @@ defmodule PerhapTest do
   end
 
   test "GETs an event" do
-    resp = get("/two/event_id")
     # Todo: Implement GETting events
-    assert resp.status == 500
+    IO.inspect(Fixture.get_cowboy_opts)
   end
 
 end
