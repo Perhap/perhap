@@ -65,7 +65,7 @@ defmodule Perhap.Error do
   def make(any) do
     build_error(503,
         "ServiceUnavailable",
-        any.message)
+        inspect(any))
   end
 
   @spec format(atom) :: iodata

@@ -12,10 +12,12 @@ defmodule Perhap.Handler do
       def init(req0, state) do
         try do
           method = :cowboy_req.method(req0)
-          {:ok, handle(method, req0, state), state}
-        rescue 
+          state1 = Keyword.merge(state, Map.to_list(req0.bindings))
+          {:ok, handle(Keyword.get(state1, :handler, method), req0, state1), state1}
+        rescue
           any ->
-            Perhap.Response.send(req0, Perhap.Error.make(any.message))
+            Logger.debug("[perhap] bad request: #{inspect(any)}")
+            Perhap.Response.send(req0, Perhap.Error.make(Map.get(any, :message, inspect(any))))
         end
       end
 

@@ -1,33 +1,37 @@
 defmodule Perhap.EventHandler do
   use Perhap.Handler
 
-
-  # event_posted |> save_event |> respond_to_event |> dispatch_event |> save_model |> clean_up
-
-  def handle("GET", conn, state) do
-    {:ok, conn |> event_requested(state), state}
-  end
-  def handle("POST", conn, state) do
-    try do
-      conn |> read_event(state) |> envelope_event |> validate_event |> save_event
-      Perhap.Response.send(conn, 204)
-    rescue
-      any ->
-        Perhap.Response.send(conn, Perhap.Error.make(any.message))
+  def handle(:get_event, conn, state) do
+    case retrieve_event(state[:event_id]) do
+      {:ok, event} ->
+        Perhap.Response.send(conn, 200, event)
+      {:error, _reason} ->
+        raise(RuntimeError, message: :not_found)
     end
+  end
+  def handle(:get_events, conn, state) do
+    args = case Keyword.has_key?(state, :entity_id) do
+      true -> [context: state[:context], entity_id: state[:entity_id]]
+      _ -> [context: state[:context]]
+    end
+    case retrieve_events(args) do
+      {:ok, events} ->
+        Perhap.Response.send(conn, 200, %{"events" => events})
+      {:error, _reason} ->
+        raise(RuntimeError, message: :not_found)
+    end
+  end
+  def handle(:post_event, conn, _state) do
+    conn |> read_event |> envelope_event |> validate_event |> save_event # |> dispatch_event
     #Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
-    {:ok, conn, state}
+    Perhap.Response.send(conn, 204)
+  end
+  def handle(:get_model, _conn, _state) do
   end
 
-  @spec event_requested(:cowboy_req.req(), any()) :: :cowboy_req.req()
-  def event_requested(conn, _state) do
-    Perhap.Response.send(conn, Perhap.Error.make(:operation_not_implemented))
-    # Todo: get_event_from_store
-  end
-
-  @spec read_event(:cowboy_req.req(), any()) ::
+  @spec read_event(:cowboy_req.req())::
     {:ok, :cowboy_req.req(), String.t} | {:error, :cowboy_req.req(), atom()}
-  def read_event(conn, _state) do
+  def read_event(conn) do
     case read_body(conn) do
       {:ok, conn2, body} -> {:ok, conn2, body}
       {:timeout, _conn2, _body} -> raise(RuntimeError, message: :request_timeout)
@@ -65,6 +69,16 @@ defmodule Perhap.EventHandler do
     end
   end
 
+  def retrieve_event(event_id) do
+    Perhap.Event.retrieve_event(event_id)
+  end
+
+  def retrieve_events([ context: context, entity_id: entity_id ]) do
+    Perhap.Event.retrieve_events(context, entity_id)
+  end
+  def retrieve_events([ context: context ]) do
+    Perhap.Event.retrieve_events(context)
+  end
 
   def save_model({:ok, _model}) do
     # persist to model store

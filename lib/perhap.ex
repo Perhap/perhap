@@ -237,36 +237,42 @@ defmodule Perhap do
   defp make_post_event_routes(context, domains, opts) do
     Enum.map domains, fn {_domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
+      opts2 = Keyword.merge(opts, [handler: :post_event, context: context])
       Enum.map Keyword.get(spec, :events), fn event ->
         Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                      event_type: event,
                                                                      model: model,
                                                                      handler: Perhap.EventHandler,
-                                                                     opts: opts })
+                                                                     opts: opts2 })
       end
     end 
   end
 
   def make_get_event_routes(context, opts) do
+    opts2 = Keyword.merge(opts, [handler: :get_event, context: context])
     Perhap.Path.make_get_event_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                 handler: Perhap.EventHandler,
-                                                                opts: opts })
+                                                                opts: opts2 })
   end
 
   def make_get_events_routes(context, opts) do
+    opts2 = Keyword.merge(opts, [handler: :get_events, context: context])
     Perhap.Path.make_get_events_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                  handler: Perhap.EventHandler,
-                                                                 opts: opts })
+                                                                 opts: opts2 })
   end
 
   defp make_model_routes(context, domains, opts) do
     Enum.map domains, fn {domain, spec} ->
+      opts2 = Keyword.merge(opts, [handler: :get_model,
+                                   context: context,
+                                   single: Keyword.has_key?(spec, :single)])
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
       Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                               domain: domain,
                                                               model: model,
                                                               handler: Perhap.ModelHandler,
-                                                              opts: opts ++ [single: Keyword.has_key?(spec, :single)] })
+                                                              opts: opts2 })
     end
   end
 

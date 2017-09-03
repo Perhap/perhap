@@ -4,13 +4,11 @@ defmodule Fixture do
 
   context :test,
     domain1: [
-      single: Fixture.Domain1,
-      events: [:domain1event]
-    ],
-    domain2: [
-      model: Fixture.Domain2,
-      events: [:domain2event1, :domain2event2]
-    ]
+      single: Fixture.Domain1, events: [:domain1event] ],
+    domain2: [ model: Fixture.Domain2,
+               events: [:domain2event1, :domain2event2] ]
+  context :test2,
+    domain1: [ single: Fixture.Domain3, events: [:domain3event] ]
 end
 
 defmodule Fixture.Domain1 do
