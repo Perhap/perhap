@@ -13,14 +13,27 @@ defmodule Perhap.Path do
     defstruct context: nil, event_type: :none, domain: nil, model: nil, handler: nil, opts: []
   end
 
-  @spec make_event_pathspec(Pathspec.t) :: list({ String.t, module(), Pathspec.opts })
-  def make_event_pathspec(%Pathspec{ context: context,
-                                     event_type: event_type,
-                                     model: model,
-                                     handler: handler,
-                                     opts: opts}) do
-    [ { "/#{context}/#{event_type}/:entity_id/:event_id", handler, Keyword.merge(opts, [model: model]) },
-      { "/#{context}/:event_id", handler, Keyword.merge(opts, [model: model]) } ]
+  @spec make_post_event_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }
+  def make_post_event_pathspec(%Pathspec{ context: context,
+                                          event_type: event_type,
+                                          model: model,
+                                          handler: handler,
+                                          opts: opts}) do
+    { "/#{context}/#{event_type}/:entity_id/:event_id", handler, Keyword.merge(opts, [model: model]) }
+  end
+
+  @spec make_get_event_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }
+  def make_get_event_pathspec(%Pathspec{ context: context,
+                                         handler: handler,
+                                         opts: opts}) do
+     { "/#{context}/:event_id/event", handler, opts }
+   end
+
+  @spec make_get_events_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }
+  def make_get_events_pathspec(%Pathspec{ context: context,
+                                         handler: handler,
+                                         opts: opts}) do
+     [ { "/#{context}/:entity_id/events", handler, opts }, { "/#{context}/events", handler, opts } ]
   end
 
   @spec make_model_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }

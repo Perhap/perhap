@@ -223,26 +223,40 @@ defmodule Perhap do
   @spec context(atom(), [domain: list(tuple())], [single: ( true | false )]) :: Macro.t
   defmacro context(context, domains, opts \\ []) do
     quote bind_quoted: [context: context, domains: domains, opts: opts] do
-      for route <- (make_routes(context, domains, opts)), do: @routes route
+      for route <- make_routes(context, domains, opts), do: @routes route
     end
   end
 
   def make_routes(context, domains, opts) do
-    make_event_routes(context, domains, opts) ++ make_model_routes(context, domains, opts)
-    |> List.flatten
+    [ make_post_event_routes(context, domains, opts),
+      make_model_routes(context, domains, opts),
+      make_get_event_routes(context, opts),
+      make_get_events_routes(context, opts) ] |> List.flatten
   end
 
-  defp make_event_routes(context, domains, opts) do
+  defp make_post_event_routes(context, domains, opts) do
     Enum.map domains, fn {_domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
       Enum.map Keyword.get(spec, :events), fn event ->
-        Perhap.Path.make_event_pathspec( %Perhap.Path.Pathspec{ context: context,
-                                                                event_type: event,
-                                                                model: model,
-                                                                handler: Perhap.EventHandler,
-                                                                opts: opts })
+        Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: context,
+                                                                     event_type: event,
+                                                                     model: model,
+                                                                     handler: Perhap.EventHandler,
+                                                                     opts: opts })
       end
     end 
+  end
+
+  def make_get_event_routes(context, opts) do
+    Perhap.Path.make_get_event_pathspec( %Perhap.Path.Pathspec{ context: context,
+                                                                handler: Perhap.EventHandler,
+                                                                opts: opts })
+  end
+
+  def make_get_events_routes(context, opts) do
+    Perhap.Path.make_get_events_pathspec( %Perhap.Path.Pathspec{ context: context,
+                                                                 handler: Perhap.EventHandler,
+                                                                 opts: opts })
   end
 
   defp make_model_routes(context, domains, opts) do

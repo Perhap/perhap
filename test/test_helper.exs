@@ -8,6 +8,7 @@ defmodule PerhapTest.Helper do
     quote location: :keep do
       use ExUnit.Case, async: true
       require Fixture
+      import PerhapTest.Helper, only: :functions
 
       @port unquote(opts)[:port]
 
@@ -21,9 +22,9 @@ defmodule PerhapTest.Helper do
       def post(body, url) do
         :application.ensure_all_started(:gun)
         {:ok, pid} = :gun.open('localhost', @port)
-        stream_ref = :gun.post(pid, url, [
-                                 {"content-type", 'application/json'}
-                               ], body)
+        stream_ref = :gun.post(pid, url,
+                               [ {"content-type", 'application/json'} ],
+                               body)
         read_stream(pid, stream_ref)
       end
 

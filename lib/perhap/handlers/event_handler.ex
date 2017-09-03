@@ -8,10 +8,15 @@ defmodule Perhap.EventHandler do
     {:ok, conn |> event_requested(state), state}
   end
   def handle("POST", conn, state) do
-    # Todo: not correct!
-    conn2 = conn |> event_posted(state) |> save_event |> respond_to_event
-    Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
-    {:ok, conn2, state}
+    try do
+      conn |> read_event(state) |> envelope_event |> validate_event |> save_event
+      Perhap.Response.send(conn, 204)
+    rescue
+      reason in RuntimeError -> 
+        Perhap.Response.send(conn, Perhap.Error.make(reason))
+    end
+    #Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
+    {:ok, conn, state}
   end
 
   @spec event_requested(:cowboy_req.req(), any()) :: :cowboy_req.req()
@@ -20,37 +25,46 @@ defmodule Perhap.EventHandler do
     # Todo: get_event_from_store
   end
 
-  @spec event_posted(:cowboy_req.req(), any()) ::
+  @spec read_event(:cowboy_req.req(), any()) ::
     {:ok, :cowboy_req.req(), String.t} | {:error, :cowboy_req.req(), atom()}
-  def event_posted(conn, _state) do
+  def read_event(conn, _state) do
     case read_body(conn) do
       {:ok, conn2, body} -> {:ok, conn2, body}
-      {:timeout, conn2, _body} ->  {:error, conn2, :request_timeout}
+      {:timeout, _conn2, _body} -> raise(RuntimeError, :request_timeout)
     end
   end
 
-  def save_event({:ok, conn, body}) do
-    save_event_to_db(conn, body)
-  end
-  def save_event(error = {:error, _conn, reason}) do
-    Logger.error("[perhap] Unable to read event from body: #{inspect(reason)}")
-    error
+  def envelope_event({:ok, req, body}) do
+    [ "" | [ context | [ event_type | _ ] ] ] = :cowboy_req.path(req) |> String.split("/")
+    %Perhap.Event{ event_id: req.bindings.event_id,
+                   metadata: %Perhap.Event.Metadata{ event_id: :cowboy_req.binding(:event_id, req),
+                                                     entity_id: :cowboy_req.binding(:entity_id, req),
+                                                     scheme: :cowboy_req.scheme(req),
+                                                     host: :cowboy_req.host(req),
+                                                     port: :cowboy_req.port(req),
+                                                     path: :cowboy_req.path(req),
+                                                     context: context |> String.to_existing_atom,
+                                                     type: event_type,
+                                                     user_id: nil,
+                                                     ip_addr: peer_to_ip(:cowboy_req.peer(req)),
+                                                     timestamp: Perhap.Event.timestamp() },
+                    data: Poison.decode!(body) }
   end
 
-  def respond_to_event(ok = {:ok, conn, _event}) do
-    Perhap.Response.send(conn, 204)
-    ok
-  end
-  def respond_to_event({:error, conn, reason}) do
-    Perhap.Response.send(conn, Perhap.Error.make(reason))
-    {:error, reason}
+  def validate_event(event) do
+    case Perhap.Event.validate(event) do
+      :ok -> event
+      {:invalid, _reason} -> raise(RuntimeError, :validation)
+    end
   end
 
-  def dispatch_event({:ok, _conn, _event}) do
-      #GenServer.cast({EventCoordinator, Enum.at(nodes, node)}, {:notify, event})
-      #call not cast
+  def save_event(event) do
+    case Perhap.Event.save_event!(event) do
+      {:ok, event} -> event
+      {:error, _reason} -> raise(RuntimeError, :service_unavailable)
+    end
   end
-  def dispatch_event(error = {:error, _reason}), do: error
+
 
   def save_model({:ok, _model}) do
     # persist to model store
@@ -58,9 +72,7 @@ defmodule Perhap.EventHandler do
   def save_model({:error, _}) do
   end
 
-  def clean_up({:ok, _model}), do: Logger.debug("[perhap] Saved model to model store")
-  def clean_up({:error, reason}), do: Logger.error("[perhap] Unable to save model to model store: #{reason}")
-
+  defp peer_to_ip({ip, _port}), do: :inet.ntoa(ip) |> to_string
 
   defp read_body(conn), do: read_body(conn, "")
 	defp read_body(conn, acc) do
@@ -74,68 +86,5 @@ defmodule Perhap.EventHandler do
 			:exit, _ -> {:timeout, conn, acc}
 		end
 	end
-
-	defp save_event_to_db(conn, body) do
-    case Perhap.Event.save_event(%Perhap.Event{ event_id: get_req(conn, :event_id),
-                                          data: get_event_data(body),
-                                          metadata: get_event_metadata(conn) }) do
-			%Perhap.Event{} = event -> {:ok, conn, event}
-      {:error, reason} ->
-        Logger.error("[perhap] Unable to save event to db: #{reason}")
-        {:error, conn, :service_unavailable}
-		end
-	end
-
-  defp get_event_data(body) do
-		Poison.decode!(body)
-  end
-
-  defp get_event_metadata(conn) do
-    %Perhap.Event.Metadata{ event_id: get_req(conn, :event_id),
-                            entity_id: get_req(conn, :entity_id),
-                            scheme: get_req(conn, :scheme),
-                            host: get_req(conn, :host),
-                            port: get_req(conn, :port),
-                            path: get_req(conn, :path),
-                            context: get_req(conn, :context),
-                            type: get_req(conn, :event_type),
-                            user_id: get_req(conn, :user_id),
-                            ip_addr: get_req(conn, :remote_ip),
-                            timestamp: Perhap.Event.timestamp() }
-  end
-
-  defp get_req(conn, :event_id) do
-    :cowboy_req.binding(:event_id, conn)
-  end
-  defp get_req(conn, :entity_id) do
-    :cowboy_req.binding(:entity_id, conn)
-  end
-  defp get_req(conn, :scheme) do
-    :cowboy_req.scheme(conn)
-  end
-  defp get_req(conn, :host) do
-    :cowboy_req.host(conn)
-  end
-  defp get_req(conn, :port) do
-    :cowboy_req.port(conn)
-  end
-  defp get_req(conn, :path) do
-    :cowboy_req.path(conn)
-  end
-  defp get_req(conn, :context) do
-    [ context | _rest ] = get_req(conn, :path) |> String.split("/")
-    context
-  end
-  defp get_req(conn, :event_type) do
-    [ _context | [ event_type | _rest ] ] = get_req(conn, :path) |> String.split("/")
-    event_type
-  end
-  defp get_req(_conn, :user_id) do
-    :none
-  end
-  defp get_req(conn, :remote_ip) do
-    {remote_ip, _remote_port} = :cowboy_req.peer(conn)
-		remote_ip |> Tuple.to_list |> Enum.join(".")
-  end
 
 end

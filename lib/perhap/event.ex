@@ -61,6 +61,14 @@ defmodule Perhap.Event do
     end
   end
 
+  def save_event!(event) do
+    eventstore = Application.get_env(:perhap, :eventstore)
+    case apply(eventstore, :put_event, [event]) do
+      :ok -> {:ok, event}
+      error -> error
+    end
+  end
+
   def save_event(event) do
     case validate(event) do
       :ok ->

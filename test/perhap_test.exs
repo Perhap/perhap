@@ -33,9 +33,12 @@ defmodule PerhapTest do
     assert {route, handler} == {:_, Perhap.RootHandler}
   end
 
-  test "GETs an event" do
-    # Todo: Implement GETting events
-    IO.inspect(Fixture.get_cowboy_opts)
+  test "POSTs an event" do
+    event = make_random_event()
+    resp = %{a: "A", b: "B"}
+             |> Poison.encode!
+             |> post("/test/domain1event/#{event.metadata.entity_id}/#{event.event_id}")
+    assert resp.status == 204
   end
 
 end

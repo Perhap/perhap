@@ -1,6 +1,5 @@
 defmodule PerhapTest.Adapters.Memory do
   use PerhapTest.Helper, port: 4499
-  import PerhapTest.Helper
   alias Perhap.Adapters.Eventstore.Memory
 
   test "put_event" do
