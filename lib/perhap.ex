@@ -97,19 +97,32 @@ defmodule Perhap do
       def call(_, _), do: true
 
       def start(:web, args) do
-        Logger.debug("Starting Cowboy listener for #{__MODULE__} on " <>
+        IO.puts("Starting Cowboy listener for #{__MODULE__} on " <>
                      "#{config(:protocol) |> to_string}://#{config(:listen)}:#{config(:port)}.")
         { start_function, transport_opts, protocol_opts } = get_cowboy_opts()
-        start_function.(__MODULE__, transport_opts, protocol_opts)
+        try do
+          start_function.(:perhap, transport_opts, protocol_opts)
+        rescue
+          any -> Logger.warn("Could not start Cowboy listener: #{inspect any}")
+        end
         start(:noweb, args)
       end
       def start(:noweb, args) do
         config() |> Enum.each(fn {k, v} -> Application.put_env(@app, k, v, [:persistent]) end)
-        eventstore = Application.get_env(:perhap, :eventstore)
-        Supervisor.start_link(__MODULE__, args, name: __MODULE__)
-        start_service(Perhap.Dispatcher)
-        start_service(eventstore)
+        try do
+          Supervisor.start_link(__MODULE__, args, name: {:via, :swarm, :perhap})
+        rescue
+          any -> Logger.warn("Could not start Perhap supervisor: #{inspect any}")
+        end
+        try do
+          apply(config(:eventstore), :start_service, [])
+        rescue
+          any -> Logger.warn("Could not start eventstore: #{inspect any}")
+        end
         {:ok, self()}
+      end
+      def start(_type, _args) do
+        start()
       end
       def start() do
         start(:web, nil)
@@ -121,23 +134,20 @@ defmodule Perhap do
 
       @spec start_service(module(), term()) :: {:ok, pid()}
       def start_service(module, name) do
-        {:ok, pid} = Swarm.register_name({module, name}, Supervisor, :start_child, [__MODULE__, apply(module, :child_spec, [name])])
+        {:ok, pid} = Swarm.register_name({module, name}, Supervisor, :start_child, [{:via, :swarm, :perhap}, apply(module, :child_spec, [name])])
         Swarm.join(:perhap, pid)
         {:ok, pid}
       end
-
       def start_service(module) do
         # no name given so use the module as name
         start_service(module, module)
       end
 
       def stop_service(name) do
-        Supervisor.terminate_child(__MODULE__, name)
+        Supervisor.terminate_child({:via, :swarm, :perhap}, name)
       end
 
       def stop(_state) do
-        :cowboy.stop_listener(:api_listener)
-        Supervisor.stop()
       end
 
       def config() do

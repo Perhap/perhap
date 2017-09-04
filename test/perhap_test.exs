@@ -78,4 +78,15 @@ defmodule PerhapTest do
     refute resp5body == resp3body
   end
 
+  test "POSTs an event, gets a model" do
+    event = make_random_event()
+    resp = %{}
+             |> Poison.encode!
+             |> post("/test/domain2event1/#{event.metadata.entity_id}/#{event.event_id}")
+    assert resp.status == 204
+    resp2 = get("/test/domain2/#{event.metadata.entity_id}/model")
+    resp2body = Poison.decode!(resp2.body)
+    assert resp2body["model"] == 1
+  end
+
 end

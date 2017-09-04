@@ -16,8 +16,9 @@ defmodule Shopping.Cart do
 
   @spec reducer(event_type, t, Perhap.Event.t) :: { t, list(Perhap.Event.t) }
   def reducer(:item_added, model, %{data: event_data}) do
-    model = %{model | items: ( model.item
+    model2 = %{model | items: ( model.item
                                |> add_item(make_item(event_data.item)) )}
+    {model2, []}
   end
   def reducer(:item_removed, model, %{data: event_data} = _event_data) do
     { %{model | items: (model.items |> remove_item(make_item(event_data.item)) )}, [] }

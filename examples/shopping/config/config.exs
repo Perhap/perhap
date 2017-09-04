@@ -3,8 +3,7 @@
 use Mix.Config
 
 config :perhap,
-  port: 9000,
-  eventstore: Doesnt.Exist
+  port: 9000
 
 config :logger,
   backends: [:console],
@@ -22,7 +21,7 @@ config :logger, :error_log,
 config :libcluster,
   topologies: [
     perhap: [ strategy: Cluster.Strategy.Epmd,
-              config: [hosts: [:"perhap1@127.0.0.1"] ]]
+              config: [hosts: [:"shopping@127.0.0.1"] ]]
   ]
 
-config :swarm, debug: true
+config :swarm, node_whitelist: [~r/^shopping[\d]@.*$/], debug: true

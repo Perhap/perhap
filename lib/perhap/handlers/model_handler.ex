@@ -1,12 +1,20 @@
 defmodule Perhap.ModelHandler do
   use Perhap.Handler
 
-  def handle("GET", conn, state) do
-    {:ok, model_requested(conn), state}
+  def handle(:get_model, conn, state) do
+    Perhap.Response.send(conn, 200, %{model: get_model(state)})
   end
 
-  @spec model_requested(:cowboy_req.req()) :: term()
-  def model_requested(conn) do
-    conn |> Perhap.Response.send(Perhap.Error.make(:operation_not_implemented))
+  def get_model(state) do
+    module = state[:model]
+    entity_id = state[:entity_id]
+    name = {module, entity_id}
+    apply(module, :ensure_started, [name])
+    case apply(module, :retrieve, [name]) do
+      {:ok, model} ->
+        model
+      e ->
+        raise(RuntimeError, message: :not_found)
+    end
   end
 end

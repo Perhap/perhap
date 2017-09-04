@@ -61,4 +61,20 @@ defmodule Perhap.Adapters.Eventstore.Memory do
                  end
                end )
   end
+
+  def handle_call({:swarm, :begin_handoff}, _from, state) do
+    {:reply, {:resume, state}, state}
+  end
+
+  def handle_cast({:swarm, :end_handoff, state}, _) do
+    {:noreply, state}
+  end
+  def handle_cast({:swarm, :resolve_conflict, _state}, state) do
+    # ignore
+    {:noreply, state}
+  end
+
+  def handle_info({:swarm, :die}, state) do
+    {:stop, :shutdown, state}
+  end
 end

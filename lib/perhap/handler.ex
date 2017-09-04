@@ -16,7 +16,7 @@ defmodule Perhap.Handler do
           {:ok, handle(Keyword.get(state1, :handler, method), req0, state1), state1}
         rescue
           any ->
-            Logger.debug("[perhap] bad request: #{inspect(any)}")
+            Logger.error("[perhap] bad request: #{inspect(any)}")
             Perhap.Response.send(req0, Perhap.Error.make(Map.get(any, :message, inspect(any))))
         end
       end

@@ -21,12 +21,14 @@ defmodule Perhap.EventHandler do
         raise(RuntimeError, message: :not_found)
     end
   end
-  def handle(:post_event, conn, _state) do
-    conn |> read_event |> envelope_event |> validate_event |> save_event # |> dispatch_event
-    #Perhap.Dispatcher.dispatch({state[:model], :something}, :event, :opts)
+  def handle(:post_event, conn, state) do
+    conn
+    |> read_event
+    |> envelope_event
+    |> validate_event
+    |> save_event
+    |> dispatch_event(state)
     Perhap.Response.send(conn, 204)
-  end
-  def handle(:get_model, _conn, _state) do
   end
 
   @spec read_event(:cowboy_req.req())::
@@ -48,7 +50,7 @@ defmodule Perhap.EventHandler do
                                                      port: :cowboy_req.port(req),
                                                      path: :cowboy_req.path(req),
                                                      context: context |> String.to_existing_atom,
-                                                     type: event_type,
+                                                     type: event_type |> String.to_existing_atom,
                                                      user_id: nil,
                                                      ip_addr: peer_to_ip(:cowboy_req.peer(req)),
                                                      timestamp: Perhap.Event.timestamp() },
@@ -69,6 +71,11 @@ defmodule Perhap.EventHandler do
     end
   end
 
+  def dispatch_event(event, state) do
+    Perhap.Dispatcher.ensure_started({Perhap.Dispatcher, __MODULE__})
+    Perhap.Dispatcher.dispatch({Perhap.Dispatcher, __MODULE__}, {state[:model], state[:entity_id]}, event, state)
+  end
+
   def retrieve_event(event_id) do
     Perhap.Event.retrieve_event(event_id)
   end
@@ -78,12 +85,6 @@ defmodule Perhap.EventHandler do
   end
   def retrieve_events([ context: context ]) do
     Perhap.Event.retrieve_events(context)
-  end
-
-  def save_model({:ok, _model}) do
-    # persist to model store
-  end
-  def save_model({:error, _}) do
   end
 
   defp peer_to_ip({ip, _port}), do: :inet.ntoa(ip) |> to_string

@@ -19,3 +19,23 @@ defmodule Fixture.Domain1 do
     {model + 1, []}
   end
 end
+
+defmodule Fixture.Domain2 do
+  use Perhap.Domain
+  @initial_state 0
+
+  def reducer(:domain2event1, model, _event) do
+    {model + 1, []}
+  end
+  def reducer(:domain2event2, model, _event) do
+    {model - 1, []}
+  end
+end
+
+defmodule Fixture.Domain3 do
+  use Perhap.Domain
+  @initial_state 0
+  def reducer(_event_type, model, _event) do
+    { model, [] }
+  end
+end
