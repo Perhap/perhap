@@ -1,9 +1,9 @@
 # perhap
-Perhap is an purely functional event store and service framework inspired by domain driven design and reactive architectures.
+Perhap is an functional, rDDD (reactive domain driven design) event store and service framework.
 
 ## Project status
 
-**Perhap is not currently ready for *your* production use.** It is being used in production, but we don't recommend you do that yet unless you're willing to dig deep into source code when something doesn't work the way you expect.
+**Perhap is not ready for production use.** It is being used in production, but we don't recommend you do that yet unless you're willing to dig deep into source code when something doesn't work the way you expect.
 
 Before we comfortably call this production ready, we'll have tens or hundreds of millions of events behind us, and be maintaining models for tens or hundreds of thousands of entities, all in production.
 
@@ -13,31 +13,33 @@ Ultimately, Perhap base will be in this repository, and you'll have your choice 
 
 Perhap is an event store and service framework. That means you can send it events, and it will share those events with services that have registered an interest in them so that the services can use those events to update their projections (or reductions).
 
-Perhap is "purely functional" in that events are immutable and services are implemented as pure functions.
+Perhap is "purely functional" in that events are immutable and services are implemented as pure functions in pretty much pure Elixir (i.e. there's virtually no framework code in your services, just business logic.)
 
 Perhap is inspired by domain driven design in that it implements a bounded context containing domain services that manage entity models that are created and updated based on domain events.
 
-A *bounded context* provides the logical and semantic context for entities, models, and events. It's also a security realm for accessing models and events. Bounded contexts own their own entities, domain services, models, and events.
+A *context* provides the logical and semantic context for entities, models, and events. It's also a security realm for accessing models and events. Bounded contexts own their own entities, domain services, models, and events.
 
-A *domain* is an area of activity within a bounded context.
+A *domain* is an area of activity within a context.
 
-An *entity* is anything with identity that may be modeled within a bounded context.
+An *entity* is anything with identity that may be modeled within a context.
 
 An *event* is something that happens, typically in the real world, and affects how a domain might model an entity.
 
 A *model* is a representation of an entity within a domain.
 
-As an event store, Perhap can receive events, persist them, and deliver them. In its current form, it receives events by HTTP, persists them to Riak or Cassandra, and delivers them either by HTTP or to a registered domain service.
+As an event store, Perhap can receive events, persist them, and deliver them. In its current form, it receives events by HTTP, persists them to a database like DynamoDB, Riak, or Cassandra, and delivers them to a registered domain service.
 
 As a DDD framework, Perhap can deliver events along with a persisted model to a domain service, which is expected to transform that model with those events, and return the transformed model along with any new events the service wants published. Perhap also allows clients to access those models by HTTP and subscribe to changes to a model over a web socket.
 
+As a reactive system, Perhap is expected to have consistent response behaviors, support an application architecture that is resilient, be easily implemented in an elastic deployment, and serve as the foundation for passing messages as events.
+
 ### Perhap event store
 
-Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_context/:domain/:entity/:event_type/:event_id`, with arbitrary data.
+Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_context/:event_type/:entity_id/:event_id`, with arbitrary data.
 
 `:bounded_context` represents the name of a context. This context must be configured within Perhap and attached to an authentication source.
 
-`:domain` and `:event_type` work together to define the type of event. `:domain` is the primary domain service that will receive the event, though any domain within a bounded context can register to receive events of a given type from other domains. `:event_type` represents what kind of event occurred. Both `:domain` and `:event_type` are declared by the Perhap client, and are not configured within Perhap; any client authenticated within a bounded context may create events for arbitrary domains and of arbitrary types.
+`:event_type` represents what kind of event occurred. `:event_type` is declared by the Perhap client, and are not configured within Perhap; any client authenticated within a bounded context may create events of arbitrary types.
 
 `:entity` is the UUIDv4 ID of an entity within the bounded context. This ID is originally created by a client, not by Perhap. Perhap does not expect to know about (or create) an entity before receiving events related to an entity.
 
@@ -45,9 +47,11 @@ Events are POSTed to Perhap over HTTP this format, `perhap_server/:bounded_conte
 
 Events are retrieved from Perhap by GETting them over HTTP by either `:event_id` or `:entity_id` in these formats:
 
-`perhap_server/event/:bounded_context/:event_id`
+`perhap_server/:bounded_context/:event_id/event` will retrieve an event by event_id.
 
-`perhap_server/events/:bounded_context/:entity_id`
+`perhap_server/:bounded_context/:entity_id/events` will retrieve all events for an entity.
+
+`perhap_server/:bounded_context/events` will retrieve all events within a given context.
 
 ### Perhap framework
 
@@ -107,27 +111,19 @@ Perhap maintains models (reductions or projections) representing entities within
 
 ## Using Perhap
 
-In it's current state, Perhap is an umbrella project with domain services implemented as umbrella apps and given domain events and models. This is not its final form.
+Perhap is a framework library that can be imported into an application to provide for the receipt and distribution of events, persistence of those events, and for answering queries about models.
 
-### Using Perhap as an Elixir library
-
-This use case is coming soon.
-
-As an Elixir library, Perhap can be added to a projects dependencies, configured for the appropriate backend database, and started as an application. The developer then sets up events much like we use routes in a web framework like Phoenix, pattern matching on incoming events and then passing them along with a persisted model to a reducer function. If the reducer relies on more than one model, all of the models can be retrieved and delivered to the reducer. The reducer function returns one transformed model, and zero or more new events for Perhap to distribute.
+Perhap can be added to a projects dependencies, configured for the appropriate backend database, and started as an application. The developer then sets up events much like we use routes in a web framework like Phoenix, pattern matching on incoming events and then passing them along with a persisted model to a reducer function. If the reducer relies on more than one model, all of the models can be retrieved and delivered to the reducer. The reducer function returns one transformed model, and zero or more new events for Perhap to distribute.
 
 Perhap maintains routes for receiving new events over HTTP, answering queries for lists of events by event ID or entity ID, delivering models representing entities within a domain, and delivering updates to a model over websockets.
 
-### Using Perhap as a service
 
-This use case is coming later.
-
-As a service, Perhap provides an event store and distribution framework. Incoming events are persisted and then published to a message bus where services can subscribe to the messages they use. Alternatively, services running on the Erlang virtual machine can register a pattern for events of interest along with their PID, and receive messages when matching events are received. Typically such services are expected to maintain their own model persistence, but Perhap will receive models back on request and make them available to its clients within a bounded context.
 
 ## Perhap is Reactive
 
 Perhap is a [reactive system](http://www.reactivemanifesto.org/) and is intended to support and fulfill the expected characteristics of a reactive architecture in several ways.
 
-*Responsive*.Perhap is designed to receive and persist events in 10 milliseconds or less, typically 3 or 4 milliseconds. Once an event is received, it will pass it to subscribed services along with their models. As pure functions, those services are typically also able to perform reductions in a responsive, predictable, and consistent manner so that the full loop from receiving an event to delivering an updated model can be considered reactive.
+*Responsive* Perhap is designed to receive and persist events in 10 milliseconds or less, typically 3 or 4 milliseconds. Once an event is received, it will pass it to subscribed services along with their models. As pure functions, those services are typically also able to perform reductions in a responsive, predictable, and consistent manner so that the full loop from receiving an event to delivering an updated model can be considered reactive.
 
 *Resilient* Perhap uses back ends based on the Dynamo Paper for persisting both events and models. So far, versions have been built using Riak, DynamoDB, and Cassandra. The Perhap API and domain services are implemented using a stateless pattern that can be distributed across an arbitrary number of nodes without need for coordination beyond load balancing.
 
