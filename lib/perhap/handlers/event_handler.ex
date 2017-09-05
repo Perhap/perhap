@@ -22,12 +22,12 @@ defmodule Perhap.EventHandler do
     end
   end
   def handle(:post_event, conn, state) do
-    conn
-    |> read_event
-    |> envelope_event
-    |> validate_event
-    |> save_event
-    |> dispatch_event(state)
+    :ok = conn
+          |> read_event
+          |> envelope_event
+          |> validate_event
+          |> save_event
+          |> dispatch_event(state)
     Perhap.Response.send(conn, 204)
   end
 
@@ -73,7 +73,7 @@ defmodule Perhap.EventHandler do
 
   def dispatch_event(event, state) do
     Perhap.Dispatcher.ensure_started({Perhap.Dispatcher, __MODULE__})
-    Perhap.Dispatcher.dispatch({Perhap.Dispatcher, __MODULE__}, {state[:model], state[:entity_id]}, event, state)
+    Perhap.Dispatcher.dispatch({Perhap.Dispatcher, __MODULE__}, event, state)
   end
 
   def retrieve_event(event_id) do

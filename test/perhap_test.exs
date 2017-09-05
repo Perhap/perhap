@@ -29,7 +29,7 @@ defmodule PerhapTest do
   end
 
   test "Finds the test routes" do
-    [ {route, handler, []} | _ ] = Fixture.routes()
+    [ {route, handler, []} | _ ] = Fixture.routes() |> Enum.reverse
     assert {route, handler} == {:_, Perhap.RootHandler}
   end
 
@@ -87,6 +87,18 @@ defmodule PerhapTest do
     resp2 = get("/test/domain2/#{event.metadata.entity_id}/model")
     resp2body = Poison.decode!(resp2.body)
     assert resp2body["model"] == 1
+  end
+
+  test "interacts with events and models directly too" do
+    entity_id = Perhap.Event.get_uuid_v4()
+    assert :ok == Fixture.event(%{context: :test,
+                                  event_type: :domain1event,
+                                  entity_id: entity_id,
+                                  event_id: Perhap.Event.get_uuid_v1(),
+                                  data: %{doesnt: "matter"}})
+    Process.sleep(100)
+    assert Fixture.model(:test, :domain1) > 0
+    assert Fixture.model(:test, :domain2, entity_id) > 0
   end
 
 end

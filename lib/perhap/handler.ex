@@ -17,7 +17,7 @@ defmodule Perhap.Handler do
         rescue
           any ->
             Logger.error("[perhap] bad request: #{inspect(any)}")
-            Perhap.Response.send(req0, Perhap.Error.make(Map.get(any, :message, inspect(any))))
+            Perhap.Response.send(req0, Perhap.Error.make(Map.get(any, :perhap, inspect(any))))
         end
       end
 

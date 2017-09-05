@@ -2,9 +2,16 @@ defmodule Perhap.Dispatcher do
   use GenServer, restart: :temporary
   require Logger
 
-  @spec dispatch(term(), term(), Perhap.Event.t, any()) :: { :noreply, any() }
-  def dispatch(dispatcher, child, event, opts) do
-    GenServer.cast({:via, :swarm, dispatcher}, {:dispatch, child, event, opts})
+  @spec dispatch(term(), Perhap.Event.t, term()) :: { :noreply, any() }
+  def dispatch(dispatcher, event, req_state) do
+    Enum.each(Keyword.get_values(req_state, :model), fn model ->
+      child = case model do
+        {model2, :single} -> {model2, :single}
+        model2 -> {model2, req_state[:entity_id]}
+      end
+      GenServer.cast({:via, :swarm, dispatcher}, {:dispatch, child, event, req_state})
+    end)
+    :ok
   end
 
   @spec start_service(term()) :: {:ok, pid()}

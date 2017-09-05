@@ -19,7 +19,11 @@ defmodule Perhap.Path do
                                           model: model,
                                           handler: handler,
                                           opts: opts}) do
-    { "/#{context}/#{event_type}/:entity_id/:event_id", handler, Keyword.merge(opts, [model: model]) }
+    model2 = case Keyword.get(opts, :single) do
+      true -> {model, :single}
+      _ -> model
+    end
+    { "/#{context}/#{event_type}/:entity_id/:event_id", handler, Keyword.merge(opts, [model: model2]) }
   end
 
   @spec make_get_event_pathspec(Pathspec.t) :: { String.t, module(), Pathspec.opts }
@@ -44,12 +48,32 @@ defmodule Perhap.Path do
                                      opts: opts }) do
     case Keyword.get(opts, :single) do
       true ->
-        { "/#{context}/#{domain}/model",
-          handler, Keyword.merge(opts, [model: model, single: true]) }
-      _ ->
-        { "/#{context}/#{domain}/:entity_id/model",
-          handler, Keyword.merge(opts, [model: model]) }
+        { "/#{context}/#{domain}/model", handler, Keyword.merge(opts, [model: {model, :single}]) }
+      _ -> model
+        { "/#{context}/#{domain}/:entity_id/model", handler, Keyword.merge(opts, [model: model]) }
     end
+  end
+
+  def make_route_table(routes) do
+    routes |> consolidate_routes |> route_table_from_consolidated
+  end
+
+  def consolidate_routes(routes) do
+    routes |> Enum.reduce(%{}, fn({path, handler, state}, acc) ->
+      case Map.has_key?(acc, path) do
+        true ->
+          {_, newstate} = acc[path]
+          Map.replace(acc, path, {handler, Enum.into(newstate, [model: state[:model]])})
+        _ ->
+          Map.put(acc, path, {handler, state})
+      end
+    end )
+  end
+
+  def route_table_from_consolidated(croutes) do
+    croutes
+    |> Map.to_list
+    |> Enum.map(fn {path, {handler, state}} -> {path, handler, state} end)
   end
 
   ## Rewriting routes

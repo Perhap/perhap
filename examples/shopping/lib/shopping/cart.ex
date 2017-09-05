@@ -9,7 +9,7 @@ defmodule Shopping.Cart do
                         | :cart_emptied
                         | :checkout_started
                         | :checkout_finished )
-  @type event_data :: %{ type: event_type, item: String.t, quantity: number(), price: number() }
+  @type event_data :: %{ item: String.t, quantity: number(), price: number() }
 
   #@initial_state %__MODULE__{id: "", items: []}
   @initial_state %{}

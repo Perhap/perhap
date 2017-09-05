@@ -88,11 +88,53 @@ defmodule Perhap do
               modelstore: unquote(opts)[:modelstore] || Perhap.Adapters.Modelstore.Memory
 
       Module.register_attribute __MODULE__, :routes, accumulate: true, persist: false
+      Module.register_attribute __MODULE__, :route_table, accumulate: false, persist: false
       @routes { :_, Perhap.RootHandler, [] }
       @routes { "/stats", Perhap.StatsHandler, []}
       @routes { "/ping", Perhap.PingHandler, [] }
 
       @before_compile unquote(__MODULE__)
+
+      def event(%{ context: context,
+                   event_type: event_type,
+                   entity_id: entity_id,
+                   event_id: event_id,
+                   data: data}) do
+        event = %Perhap.Event{ event_id: event_id,
+                  metadata: %Perhap.Event.Metadata{
+                    event_id: event_id,
+                    entity_id: entity_id,
+                    context: context,
+                    type: event_type,
+                    user_id: nil,
+                    timestamp: Perhap.Event.timestamp() },
+                  data: data }
+        { _path, _handler, opts } = find_route("/#{context |> to_string}/#{event_type |> to_string}/:entity_id/:event_id")
+        opts2 = Keyword.merge(opts, [entity_id: entity_id, event_id: event_id])
+        case Perhap.Event.validate(event) do
+          :ok ->
+            Perhap.Event.save_event!(event)
+            Perhap.Dispatcher.ensure_started({Perhap.Dispatcher, __MODULE__})
+            Perhap.Dispatcher.dispatch({Perhap.Dispatcher, __MODULE__}, event, opts2)
+          {:invalid, reason} ->
+            raise(RuntimeError, message: reason)
+        end
+      end
+
+      def model(context, domain, entity_id \\ nil) do
+        route = "/#{context |> to_string}/#{domain |> to_string}/#{if entity_id, do: ":entity_id/", else: ""}model"
+        { _path, _handler, opts } = find_route(route)
+        ({module, _} = child) = case opts[:model] do
+          {module, :single} -> {module, :single}
+          module -> {module, entity_id}
+        end
+        case apply(module, :retrieve, [child]) do
+          {:ok, model} ->
+            model
+          e ->
+            raise(RuntimeError, message: "Model not found")
+        end
+      end
 
       def call(_, _), do: true
 
@@ -198,15 +240,6 @@ defmodule Perhap do
         parsed
       end
 
-    end
-  end
-
-  defmacro __before_compile__(_env) do
-    quote do
-      def routes() do
-        @routes |> Enum.reverse
-      end
-
       def get_cowboy_opts() do
         transport_opts =  [ ip:              parse_address(config(:listen)),
                             port:            config(:port),
@@ -217,13 +250,29 @@ defmodule Perhap do
                             certfile:        config(:certfile),
                             keyfile:         config(:keyfile),
                             versions:        [ :'tlsv1.2', :'tlsv1.1', :'tlsv1' ] ]
-        protocol_opts  = %{ env:             %{ dispatch: :cowboy_router.compile([{:_, @routes}]) },
+        protocol_opts  = %{ env:             %{ dispatch: :cowboy_router.compile([{:_, routes()}]) },
                             middlewares:     [ :cowboy_router, :cowboy_handler ],
                             stream_handlers: [ :cowboy_compress_h, :cowboy_stream_h] }
         case config(:protocol) do
           :http  -> { &:cowboy.start_clear/3, transport_opts, protocol_opts }
           :https -> { &:cowboy.start_tls/3, transport_opts ++ ssl_opts, protocol_opts }
         end
+      end
+    end
+  end
+
+  defmacro __before_compile__(_env) do
+    quote do
+      @route_table Perhap.Path.make_route_table(@routes)
+
+      def routes() do
+        @route_table |> Enum.reverse
+      end
+
+      def find_route(path) do
+        routes()
+        |> Enum.filter(fn({path2, _handler, _state}) -> path2 == path end)
+        |> List.first
       end
     end
   end
@@ -247,7 +296,7 @@ defmodule Perhap do
   defp make_post_event_routes(context, domains, opts) do
     Enum.map domains, fn {_domain, spec} ->
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
-      opts2 = Keyword.merge(opts, [handler: :post_event, context: context])
+      opts2 = Keyword.merge(opts, [handler: :post_event, context: context, single: Keyword.has_key?(spec, :single)])
       Enum.map Keyword.get(spec, :events), fn event ->
         Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                      event_type: event,

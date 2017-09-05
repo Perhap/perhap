@@ -4,8 +4,8 @@ defmodule PerhapTest.Path do
   # Paths
 
   test "makes valid cowboy pathspecs for events" do
-    left = {"/c/e/:entity_id/:event_id", Perhap.Handler, [model: PerhapTest.Model]}
-    right = Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: "c",
+    right = {"/c/e/:entity_id/:event_id", Perhap.Handler, [model: PerhapTest.Model]}
+    left = Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                          event_type: "e",
                                                                          model: PerhapTest.Model,
                                                                          handler: Perhap.Handler,
@@ -20,8 +20,8 @@ defmodule PerhapTest.Path do
   end
 
   test "makes valid cowboy pathspecs for models not single" do
-    left = {"/c/d/:entity_id/model", Perhap.Handler, [single: false, model: PerhapTest.Model]}
-    right = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
+    right = {"/c/d/:entity_id/model", Perhap.Handler, [single: false, model: PerhapTest.Model]}
+    left = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                     domain: "d",
                                                                     model: PerhapTest.Model,
                                                                     handler: Perhap.Handler,
@@ -30,8 +30,8 @@ defmodule PerhapTest.Path do
   end
 
   test "makes valid cowboy pathspecs for single models" do
-    left = {"/c/d/model", Perhap.Handler, [model: PerhapTest.Model, single: true]}
-    right = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
+    right = {"/c/d/model", Perhap.Handler, [single: true, model: {PerhapTest.Model, :single}]}
+    left = Perhap.Path.make_model_pathspec( %Perhap.Path.Pathspec{ context: "c",
                                                                     domain: "d",
                                                                     model: PerhapTest.Model,
                                                                     handler: Perhap.Handler,
