@@ -2,7 +2,7 @@ defmodule Perhap.Dispatcher do
   use GenServer, restart: :temporary
   require Logger
 
-  @spec dispatch(term(), Perhap.Event.t, term()) :: { :noreply, any() }
+  @spec dispatch(term(), Perhap.Event.t, term()) :: :ok
   def dispatch(dispatcher, event, req_state) do
     Enum.each(Keyword.get_values(req_state, :model), fn model ->
       child = case model do
@@ -14,7 +14,7 @@ defmodule Perhap.Dispatcher do
     :ok
   end
 
-  @spec start_service(term()) :: {:ok, pid()}
+  @spec start_service(term) :: {:ok, pid}
   def start_service(name) do
     {:ok, pid} = Swarm.register_name(name, Supervisor, :start_child, [{:via, :swarm, :perhap}, child_spec(name)])
     Swarm.join(:perhap, pid)
