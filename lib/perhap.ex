@@ -24,15 +24,15 @@ defmodule Perhap do
 
   Perhap will generate routes for POSTing events, retrieving events, and retrieving models. Your domain service will receive the events and update a model, returning a tuple with the transformed model and a list of new events.
 
-  In your domain service, include Perhap.Domain, set your initial model state, and implement a `reducer` function.
+  In your domain service, include Perhap.Domain, define a structure, and implement a `reducer` function.
 
   ```
   defmodule MyApp.MyDomainService do
     use Perhap.Domain
-    @initial_state 0
+    defstruct value: 0
 
-    def reducer({:myevent1, model, event}) do
-      model + 1
+    def reducer({:myevent1, %MyApp.MyDomainService{value: v}, event}) do
+      %MyApp.MyDomainService{value: v + 1}
     end
     ...
   ```
@@ -150,7 +150,7 @@ defmodule Perhap do
         start(:noweb, args)
       end
       def start(:noweb, args) do
-        config() |> Enum.each(fn {k, v} -> Application.put_env(@app, k, v, [:persistent]) end)
+        config() |> Enum.each(fn {k, v} -> Application.put_env(:perhap, k, v, [:persistent]) end)
         try do
           Supervisor.start_link(__MODULE__, args, name: {:via, :swarm, :perhap})
         rescue

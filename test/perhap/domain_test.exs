@@ -10,15 +10,15 @@ defmodule PerhapTest.Domain do
   end
 
   test "Start a domain and retrieve initial state", %{pid: pid} do
-    assert {:ok, 0} == GenServer.call(pid, {:retrieve, []})
+    assert {:ok, %Fixture.Domain1{value: 0}} == GenServer.call(pid, {:retrieve, []})
   end
 
   test "Cast a message and update state", _context do
     event = %Perhap.Event{ event_id: Perhap.Event.get_uuid_v1(),
                            data: %{},
                            metadata: %Perhap.Event.Metadata{} }
-    { :noreply, state } = Fixture.Domain1.handle_cast({:reduce, [event]}, 0)
-    assert {:reply, { :ok, 1 }, 1} ==
+    { :noreply, state } = Fixture.Domain1.handle_cast({:reduce, [event]}, %Fixture.Domain1{value: 0})
+    assert {:reply, { :ok, %Fixture.Domain1{value: 1}}, %Fixture.Domain1{value: 1}} ==
       Fixture.Domain1.handle_call({:retrieve, []}, nil, state)
   end
 

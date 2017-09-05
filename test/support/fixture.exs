@@ -13,32 +13,36 @@ end
 
 defmodule Fixture.Domain1 do
   use Perhap.Domain
-  @initial_state 0
 
-  def reducer(_event_type, model, event) do
-    {model + 1, []}
+  defstruct value: 0
+
+  def reducer(_event_type, %__MODULE__{value: v}, _event) do
+    {%__MODULE__{value: v + 1}, []}
   end
 end
 
 defmodule Fixture.Domain2 do
   use Perhap.Domain
-  @initial_state 0
 
-  def reducer(:domain1event, model, event) do
-    {2 * (model + 1), []}
+  defstruct value: 0
+
+  def reducer(:domain1event, %__MODULE__{value: v}, _event) do
+    {%__MODULE__{value: 2 * (v + 1)}, []}
   end
-  def reducer(:domain2event1, model, _event) do
-    {model + 1, []}
+  def reducer(:domain2event1, %__MODULE__{value: v}, _event) do
+    {%__MODULE__{value: v + 1}, []}
   end
-  def reducer(:domain2event2, model, _event) do
-    {model - 1, []}
+  def reducer(:domain2event2, %__MODULE__{value: v}, _event) do
+    {%__MODULE__{value: v - 1}, []}
   end
 end
 
 defmodule Fixture.Domain3 do
   use Perhap.Domain
-  @initial_state 0
-  def reducer(_event_type, model, _event) do
-    { model, [] }
+
+  defstruct value: 0
+
+  def reducer(_event_type, %__MODULE__{value: v}, _event) do
+    {%__MODULE__{value: v}, [] }
   end
 end

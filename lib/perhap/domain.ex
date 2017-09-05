@@ -7,7 +7,6 @@ defmodule Perhap.Domain do
       use GenServer, restart: :temporary
 
       @behaviour Perhap.Domain
-      @initial_state nil
 
       @before_compile unquote(__MODULE__)
 
@@ -116,7 +115,7 @@ defmodule Perhap.Domain do
   defmacro __before_compile__(_env) do
     quote do
       def start_link(name) do
-        GenServer.start_link(__MODULE__, @initial_state, [name])
+        GenServer.start_link(__MODULE__, %__MODULE__{}, [name])
       end
 
       def stop(name) do

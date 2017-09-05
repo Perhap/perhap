@@ -86,7 +86,7 @@ defmodule PerhapTest do
     assert resp.status == 204
     resp2 = get("/test/domain2/#{event.metadata.entity_id}/model")
     resp2body = Poison.decode!(resp2.body)
-    assert resp2body["model"] == 1
+    assert resp2body["model"] == %{"value" => 1}
   end
 
   test "interacts with events and models directly too" do

@@ -8,7 +8,8 @@ config :perhap,
 config :logger,
   backends: [:console],
   utc_log: true,
-  compile_time_purge_level: :debug
+  compile_time_purge_level: :debug,
+  level: :error
 
 config :logger, :access_log,
   metadata: [:application, :module, :function],
@@ -24,4 +25,4 @@ config :libcluster,
               config: [hosts: [:"shopping@127.0.0.1"] ]]
   ]
 
-config :swarm, node_whitelist: [~r/^shopping[\d]@.*$/], debug: true
+config :swarm, node_whitelist: [~r/^shopping[\d]@.*$/], sync_nodes_timeout: 1000 #debug: true
