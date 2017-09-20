@@ -6,14 +6,16 @@ defmodule Perhap.ModelHandler do
   end
 
   def get_model(state) do
-    module = state[:model]
-    entity_id = state[:entity_id]
-    name = {module, entity_id}
-    apply(module, :ensure_started, [name])
-    case apply(module, :retrieve, [name]) do
+    model = state[:model]
+    ({model2, _} = child) = case model do
+      {model2, :single} -> {model2, :single}
+      model2 -> {model2, state[:entity_id]}
+    end
+    apply(model2, :ensure_started, [child])
+    case apply(model2, :retrieve, [child]) do
       {:ok, model} ->
         model
-      e ->
+      _ ->
         raise(RuntimeError, message: :not_found)
     end
   end

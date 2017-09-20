@@ -101,4 +101,17 @@ defmodule PerhapTest do
     assert Fixture.model(:test, :domain2, entity_id) > 0
   end
 
+  test "two models for one event through web interface" do
+    entity_id = Perhap.Event.get_uuid_v4()
+    event_id = Perhap.Event.get_uuid_v1()
+    resp1 = %{} |> Poison.encode! |> post("/test/domain1event/#{entity_id}/#{event_id}")
+    assert resp1.status == 204
+    resp2 = get("/test/domain1/model")
+    resp2body = Poison.decode!(resp2.body)
+    assert resp2body["value"] > 0
+    resp3 = get("/test/domain2/#{entity_id}/model")
+    resp3body = Poison.decode!(resp3.body)
+    assert resp3body["value"] > 0
+  end
+
 end

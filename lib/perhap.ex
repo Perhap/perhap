@@ -298,11 +298,12 @@ defmodule Perhap do
       model = Keyword.get(spec, :single, Keyword.get(spec, :model))
       opts2 = Keyword.merge(opts, [handler: :post_event, context: context, single: Keyword.has_key?(spec, :single)])
       Enum.map Keyword.get(spec, :events), fn event ->
+        opts3 = Keyword.merge(opts2, [event_type: event])
         Perhap.Path.make_post_event_pathspec( %Perhap.Path.Pathspec{ context: context,
                                                                      event_type: event,
                                                                      model: model,
                                                                      handler: Perhap.EventHandler,
-                                                                     opts: opts2 })
+                                                                     opts: opts3 })
       end
     end 
   end

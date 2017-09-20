@@ -9,7 +9,7 @@ defmodule Perhap.Event.Metadata do
                           type: atom(),
                           user_id: String.t,
                           ip_addr: String.t,
-                          timestamp: Integer }
+                          timestamp: integer() }
   defstruct event_id: nil,
             entity_id: nil,
             scheme: nil,
@@ -18,13 +18,14 @@ defmodule Perhap.Event.Metadata do
             path: nil,
             context: nil,
             type: nil,
-            user_id: nil,
+            user_id: "",
             ip_addr: nil,
             timestamp: nil
 end
 
 defmodule Perhap.Event.UUIDv1 do
   @type t :: String.t
+  @type time_ordered :: String.t
 end
 
 defmodule Perhap.Event.UUIDv4 do
@@ -37,6 +38,7 @@ defmodule Perhap.Event do
                           data: map(),
                           metadata: Perhap.Event.Metadata.t }
   defstruct event_id: "",
+            time_order: "",
             data: %{},
             metadata: %Perhap.Event.Metadata{}
 
@@ -86,14 +88,9 @@ defmodule Perhap.Event do
     apply(eventstore, :get_event, [event_id])
   end
 
-  def retrieve_events(context) do
+  def retrieve_events(context, opts \\ []) do
     eventstore = Application.get_env(:perhap, :eventstore)
-    apply(eventstore, :get_events, [context])
-  end
-
-  def retrieve_events(context, entity_id) do
-    eventstore = Application.get_env(:perhap, :eventstore)
-    apply(eventstore, :get_events, [context, entity_id])
+    apply(eventstore, :get_events, [context, opts])
   end
 
   # Timestamps and unique integers

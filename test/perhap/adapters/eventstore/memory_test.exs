@@ -25,7 +25,10 @@ defmodule PerhapTest.Adapters.Memory do
     rando2 = make_random_event( 
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )
     Memory.put_event(rando2)
-    assert Memory.get_events(random_context, random_entity_id) == {:ok, [rando1, rando2]}
+    Memory.get_events(random_context, event_id: random_entity_id)
+    {:ok, [result1, result2]} = Memory.get_events(random_context, event_id: random_entity_id)
+    assert result1.event_id == rando1.event_id
+    assert result2.event_id == rando2.event_id
   end
 
   test "get_events without entity_id" do

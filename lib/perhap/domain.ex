@@ -7,8 +7,11 @@ defmodule Perhap.Domain do
       use GenServer, restart: :temporary
 
       @behaviour Perhap.Domain
-
       @before_compile unquote(__MODULE__)
+
+      @service_ttl :infinity
+      @events_expire_after :never
+      @buffer_size 1
 
       # Interface
 
@@ -26,18 +29,12 @@ defmodule Perhap.Domain do
 
       # Overridable functions
 
-      @spec reducer(atom(), term(), Perhap.Event.t) :: { term(), list(Perhap.Event.t) }
-      def reducer(_event_type, model, _event) do
-        Logger.error("[perhap] No reducer defined in module #{__MODULE__}.")
-        { model, [] }
-      end
-
-      #@spec retriever(state: term(), args: map()) :: { :ok, term() } | { :error, String.t }
+      #@spec retriever(model: term(), args: map()) :: { :ok, term() } | { :error, String.t }
       # (CompileError) test/support/perhaptest_fixture.exs:17: spec for undefined function retriever/1
       # Arity 1? Nah.
-      def retriever(state, _args), do: {:ok, state}
+      def retriever(model, _args), do: {:ok, model}
 
-      defoverridable([reducer: 3, retriever: 2])
+      defoverridable([retriever: 2])
 
       # Setup
 
@@ -72,6 +69,7 @@ defmodule Perhap.Domain do
 
       # Calls and Casts for Perhap
       def handle_call({:retrieve, args}, _from, state) do
+        #Todo: state isn't a model any more
         reply = retriever(state, args)
         { :reply, reply, state }
       end
@@ -82,14 +80,15 @@ defmodule Perhap.Domain do
         super(req, from, state)
       end
 
-      def handle_cast({:reduce, events}, state) do
-        { model, new_events } = Enum.reduce( events,
-                                             {state, []},
-                                             fn event, { state, _new_events } ->
-                                               reducer(event.metadata.type, state, event)
+      def handle_cast({:reduce, events}, model) do
+        { model2, new_events } = Enum.reduce( events,
+                                             {model, []},
+                                             fn event, { model, _new_events } ->
+                                               reducer(event.metadata.type, model, event)
                                              end )
+        # todo: persist model
         # todo: publish new events
-        {:noreply, model}
+        {:noreply, model2}
       end
       def handle_cast({:swarm, :end_handoff, state}, _) do
         {:noreply, state}
@@ -120,6 +119,14 @@ defmodule Perhap.Domain do
 
       def stop(name) do
         GenServer.stop(name)
+      end
+
+      def config() do
+        %{
+          ttl: @service_ttl,
+          expire: @events_expire_after,
+          buffer_size: @buffer_size
+        }
       end
     end
   end
