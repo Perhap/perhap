@@ -42,19 +42,23 @@ defmodule Perhap.EventHandler do
 
   def envelope_event({:ok, req, body}) do
     [ "" | [ context | [ event_type | _ ] ] ] = :cowboy_req.path(req) |> String.split("/")
-    %Perhap.Event{ event_id: req.bindings.event_id,
-                   metadata: %Perhap.Event.Metadata{ event_id: :cowboy_req.binding(:event_id, req),
-                                                     entity_id: :cowboy_req.binding(:entity_id, req),
+    data = case Poison.decode!(body) do
+      data_map when is_map(data_map) -> data_map
+      _ -> raise(RuntimeError, message: :validation)
+    end
+    %Perhap.Event{ event_id: req.bindings.event_id |> to_string,
+                   metadata: %Perhap.Event.Metadata{ event_id: :cowboy_req.binding(:event_id, req) |> to_string,
+                                                     entity_id: :cowboy_req.binding(:entity_id, req) |> to_string,
                                                      scheme: :cowboy_req.scheme(req),
                                                      host: :cowboy_req.host(req),
-                                                     port: :cowboy_req.port(req),
+                                                     port: :cowboy_req.port(req) |> to_string |> String.to_integer,
                                                      path: :cowboy_req.path(req),
                                                      context: context |> String.to_existing_atom,
                                                      type: event_type |> String.to_existing_atom,
-                                                     user_id: nil,
+                                                     user_id: "", # Todo: capture user_id
                                                      ip_addr: peer_to_ip(:cowboy_req.peer(req)),
                                                      timestamp: Perhap.Event.timestamp() },
-                    data: Poison.decode!(body) }
+                    data: data }
   end
 
   def validate_event(event) do
@@ -81,7 +85,7 @@ defmodule Perhap.EventHandler do
   end
 
   def retrieve_events([ context: context, entity_id: entity_id ]) do
-    Perhap.Event.retrieve_events(context, entity_id)
+    Perhap.Event.retrieve_events(context, entity_id: entity_id)
   end
   def retrieve_events([ context: context ]) do
     Perhap.Event.retrieve_events(context)
