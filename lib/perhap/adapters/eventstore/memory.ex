@@ -41,7 +41,7 @@ defmodule Perhap.Adapters.Eventstore.Memory do
                end )
   end
 
-  @spec get_events(atom(), [entity_id: Perhap.Event.UUIDv4.t, after: Perhap.Event.UUIDv1.t]) ::
+  @spec get_events(atom(), [entity_id: Perhap.Event.UUIDv4.t, after: Perhap.Event.UUIDv1.t, type: atom()]) ::
     {:ok, list(Perhap.Event.t)} | {:error, term}
   def get_events(context, opts \\ []) do
     Agent.get( __MODULE__,
@@ -50,19 +50,25 @@ defmodule Perhap.Adapters.Eventstore.Memory do
                    true ->
                      Map.get(index, {context, opts[:entity_id]}, [])
                    _ ->
-                     event_ids =
-                       index
-                       |> Enum.filter(fn {{c, _}, _} -> c == context end)
-                       |> Enum.map(fn {_, events} -> events end)
-                       |> List.flatten
+                     index
+                     |> Enum.filter(fn {{c, _}, _} -> c == context end)
+                     |> Enum.map(fn {_, events} -> events end)
+                     |> List.flatten
                  end
                  event_ids2 = case Keyword.has_key?(opts, :after) do
                    true ->
                      after_event = time_order(opts[:after])
-                     event_ids |> Enum.filter(fn {ev} -> ev > after_event end)
+                     event_ids |> Enum.filter(fn ev -> ev > after_event end)
                    _ -> event_ids
                  end
-                 {:ok, Map.take(events, event_ids2) |> Map.values}
+                 events = Map.take(events, event_ids2) |> Map.values
+                 events2 = case Keyword.has_key?(opts, :type) do
+                   true ->
+                     events |> Enum.filter(fn %Perhap.Event{metadata: %Perhap.Event.Metadata{type: type}} -> type == opts[:type] end)
+                   _ ->
+                     events
+                 end
+                 {:ok, events2}
                end )
   end
 

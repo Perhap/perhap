@@ -121,18 +121,37 @@ defmodule Perhap.EventTest do
 
   test "retrieves events following an event for an entity" do
     assert Perhap.Event.retrieve_events(:aa) == {:ok, []}
-    random_entity = Perhap.Event.get_uuid_v4
+    random_entity_id = Perhap.Event.get_uuid_v4
     random_event_ids = for _ <- 1..5, do: Perhap.Event.get_uuid_v1
     random_events = random_event_ids
                     |> Enum.map(fn(ev) ->
-                      make_random_event(%Perhap.Event.Metadata{context: :aa, event_id: ev, entity_id: random_entity})
+                      make_random_event(%Perhap.Event.Metadata{context: :aa, event_id: ev, entity_id: random_entity_id})
                     end)
     random_events |> Enum.each(fn(event) -> Perhap.Event.save_event(event) end)
-    [ ev1 | [ ev2 | _ ] ] = random_event_ids |> Enum.reverse
-    #first_event = Perhap.Event.retrieve_events(:aa, entity_id: random_entity, after: ev2)
+    [ _ | [ ev2 | _ ] ] = random_event_ids |> Enum.reverse
+    {:ok, [left]} = Perhap.Event.retrieve_events(:aa, entity_id: random_entity_id, after: ev2)
+    [ right | _ ] = random_events |> Enum.reverse
+    assert left == right
   end
 
   test "retrieves events filtered by an event_type" do
+    assert Perhap.Event.retrieve_events(:bb) == {:ok, []}
+    random_entity_id = Perhap.Event.get_uuid_v4
+    rando1 = make_random_event( 
+      %Perhap.Event.Metadata{context: :bb, type: :bb_type_1, entity_id: random_entity_id} )
+    Perhap.Event.save_event(rando1)
+    rando2 = make_random_event( 
+      %Perhap.Event.Metadata{context: :bb, type: :bb_type_2, entity_id: random_entity_id} )
+    Perhap.Event.save_event(rando2)
+    rando3 = make_random_event( 
+      %Perhap.Event.Metadata{context: :bb, type: :bb_type_2, entity_id: random_entity_id} )
+    Perhap.Event.save_event(rando3)
+    {:ok, [result1]} = Perhap.Event.retrieve_events(:bb, entity_id: random_entity_id, type: :bb_type_1)
+    {:ok, [result2 | _]} = Perhap.Event.retrieve_events(:bb, type: :bb_type_2)
+    {:ok, [result3]} = Perhap.Event.retrieve_events(:bb, type: :bb_type_2, after: result2.event_id)
+    assert result1 == rando1
+    assert result2 == rando2
+    assert result3 == rando3
   end
 
   defp make_v1() do
