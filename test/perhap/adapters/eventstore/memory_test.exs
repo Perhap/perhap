@@ -9,7 +9,7 @@ defmodule PerhapTest.Adapters.Memory do
   end
 
   test "get_event" do
-    random_context = Enum.random([:a, :b, :c, :d, :e])
+    random_context = Enum.random([:a, :b])
     rando = make_random_event( 
       %Perhap.Event.Metadata{context: random_context, entity_id: Perhap.Event.get_uuid_v4()} )
     Memory.put_event(rando)
@@ -17,7 +17,7 @@ defmodule PerhapTest.Adapters.Memory do
   end
 
   test "get_events with entity_id" do
-    random_context = Enum.random([:a, :b, :c, :d, :e])
+    random_context = Enum.random([:c, :d, :e])
     random_entity_id = Perhap.Event.get_uuid_v4()
     rando1 = make_random_event( 
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )

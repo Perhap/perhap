@@ -46,36 +46,53 @@ defmodule Perhap.Adapters.Eventstore.Memory do
   def get_events(context, opts \\ []) do
     Agent.get( __MODULE__,
                fn %__MODULE__{events: events, index: index} ->
-                 event_ids = case Keyword.has_key?(opts, :entity_id) do
-                   true ->
-                     Map.get(index, {context, opts[:entity_id]}, [])
-                   _ ->
-                     index
-                     |> Enum.filter(fn {{c, _}, _} -> c == context end)
-                     |> Enum.map(fn {_, events} -> events end)
-                     |> List.flatten
-                 end
-                 event_ids2 = case Keyword.has_key?(opts, :after) do
-                   true ->
-                     after_event = time_order(opts[:after])
-                     event_ids |> Enum.filter(fn ev -> ev > after_event end)
-                   _ -> event_ids
-                 end
-                 events = Map.take(events, event_ids2) |> Map.values
-                 events2 = case Keyword.has_key?(opts, :type) do
-                   true ->
-                     events |> Enum.filter(fn %Perhap.Event{metadata: %Perhap.Event.Metadata{type: type}} -> type == opts[:type] end)
-                   _ ->
-                     events
-                 end
-                 {:ok, events2}
+                 filtered_index  = index
+                                   |> filter_index_by_entity_id(context, opts)
+                                   |> filter_event_ids_after_a_given_event(opts)
+                 filtered_events = events
+                                   |> Map.take(filtered_index)
+                                   |> Map.values
+                                   |> filter_events_by_type(opts)
+                 {:ok, filtered_events}
                end )
+  end
+
+  defp filter_index_by_entity_id(index, context, opts) do
+    case Keyword.has_key?(opts, :entity_id) do
+      true ->
+        index
+        |> Map.get({context, opts[:entity_id]}, [])
+      _ ->
+        index
+        |> Enum.filter(fn {{c, _}, _} -> c == context end)
+        |> Enum.map(fn {_, events} -> events end)
+        |> List.flatten
+    end
+  end
+
+  defp filter_event_ids_after_a_given_event(event_ids, opts) do
+    case Keyword.has_key?(opts, :after) do
+      true ->
+        after_event = time_order(opts[:after])
+        event_ids |> Enum.filter(fn ev -> ev > after_event end)
+      _ -> event_ids
+    end
   end
 
   defp time_order(maybe_uuidv1) do
     case Perhap.Event.is_time_order?(maybe_uuidv1) do
       true -> maybe_uuidv1
       _ -> maybe_uuidv1 |> Perhap.Event.uuid_v1_to_time_order
+    end
+  end
+
+  def filter_events_by_type(events, opts) do
+    case Keyword.has_key?(opts, :type) do
+      true ->
+        events
+        |> Enum.filter(fn %Perhap.Event{metadata: %Perhap.Event.Metadata{type: type}} -> type == opts[:type] end)
+      _ ->
+        events
     end
   end
 
