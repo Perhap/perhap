@@ -47,36 +47,31 @@ defmodule Perhap.Adapters.Eventstore.Memory do
     Agent.get( __MODULE__,
                fn %__MODULE__{events: events, index: index} ->
                  filtered_index  = index
-                                   |> filter_index_by_entity_id(context, opts)
-                                   |> filter_event_ids_after_a_given_event(opts)
+                                   |> filter_index_by_entity_id(context, Keyword.get(opts, :entity_id))
+                                   |> filter_event_ids_after_a_given_event(Keyword.get(opts, :after))
                  filtered_events = events
                                    |> Map.take(filtered_index)
                                    |> Map.values
-                                   |> filter_events_by_type(opts)
+                                   |> filter_events_by_type(Keyword.get(opts,:type))
                  {:ok, filtered_events}
                end )
   end
 
-  defp filter_index_by_entity_id(index, context, opts) do
-    case Keyword.has_key?(opts, :entity_id) do
-      true ->
-        index
-        |> Map.get({context, opts[:entity_id]}, [])
-      _ ->
-        index
-        |> Enum.filter(fn {{c, _}, _} -> c == context end)
-        |> Enum.map(fn {_, events} -> events end)
-        |> List.flatten
-    end
+  defp filter_index_by_entity_id(index, context, nil) do
+    index
+    |> Enum.filter(fn {{c, _}, _} -> c == context end)
+    |> Enum.map(fn {_, events} -> events end)
+    |> List.flatten
+  end
+  defp filter_index_by_entity_id(index, context, entity_id) do
+    index
+    |> Map.get({context, entity_id}, [])
   end
 
-  defp filter_event_ids_after_a_given_event(event_ids, opts) do
-    case Keyword.has_key?(opts, :after) do
-      true ->
-        after_event = time_order(opts[:after])
-        event_ids |> Enum.filter(fn ev -> ev > after_event end)
-      _ -> event_ids
-    end
+  defp filter_event_ids_after_a_given_event(event_ids, nil), do: event_ids
+  defp filter_event_ids_after_a_given_event(event_ids, after_event) do
+    after_event = time_order(after_event)
+    event_ids |> Enum.filter(fn ev -> ev > after_event end)
   end
 
   defp time_order(maybe_uuidv1) do
@@ -86,14 +81,10 @@ defmodule Perhap.Adapters.Eventstore.Memory do
     end
   end
 
-  def filter_events_by_type(events, opts) do
-    case Keyword.has_key?(opts, :type) do
-      true ->
-        events
-        |> Enum.filter(fn %Perhap.Event{metadata: %Perhap.Event.Metadata{type: type}} -> type == opts[:type] end)
-      _ ->
-        events
-    end
+  def filter_events_by_type(events, nil), do: events
+  def filter_events_by_type(events, filter_type) do
+    events
+    |> Enum.filter(fn %Perhap.Event{metadata: %Perhap.Event.Metadata{type: type}} -> type == filter_type end)
   end
 
   def handle_call({:swarm, :begin_handoff}, _from, state) do
