@@ -23,7 +23,7 @@ defmodule Shopping.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:perhap, path: "~/Development/Perhap/perhap"},
+      {:perhap, path: "../../"},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
   end
