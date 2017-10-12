@@ -17,7 +17,7 @@ defmodule Perhap.Domain do
 
       #@spec reduce(service_id: Perhap.Event.UUIDv4.t | module(),
       #             event: list(Perhap.Event.t) | Perhap.Event.t) :: :ok
-      def reduce(service_id, event) when not is_list(event), do: reduce(service_id, List.wrap(event))
+      def reduce(service_id, event) when not is_list(event), do: reduce(service_id, [event])
       def reduce(service_id, events) do
         GenServer.cast({:via, :swarm, service_id}, {:reduce, events})
       end
@@ -113,8 +113,10 @@ defmodule Perhap.Domain do
 
   defmacro __before_compile__(_env) do
     quote do
+      @type state models: %{required(Perhap.Event.UUIDv1.t) => %__MODULE__{}}, ledger: list(Perhap.Event.t)
+
       def start_link(name) do
-        GenServer.start_link(__MODULE__, %__MODULE__{}, [name])
+        GenServer.start_link(__MODULE__, [models: [], ledger: []], [name])
       end
 
       def stop(name) do
@@ -124,8 +126,8 @@ defmodule Perhap.Domain do
       def config() do
         %{
           ttl: @service_ttl,
-          expire: @events_expire_after,
-          buffer_size: @buffer_size
+          ledger_size: @ledger_size,
+          num_versions: @num_versions
         }
       end
     end

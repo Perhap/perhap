@@ -1,4 +1,4 @@
-defmodule PerhapTest.Adapters.Memory do
+defmodule PerhapTest.Adapters.Eventstore.Memory do
   use PerhapTest.Helper, port: 4499
   alias Perhap.Adapters.Eventstore.Memory
 
