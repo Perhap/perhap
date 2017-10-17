@@ -55,7 +55,7 @@ Events are retrieved from Perhap by GETting them over HTTP by either `:event_id`
 
 ### Perhap framework
 
-As a framework, Perhap allows you to consume incoming events in order to maintain domain models of your entities within a bounded context. Common tasks required within such a pattern are done by Perhap, so that the domain service is strictly responsible for strictly responsible for maintaining the integrity of the model by applying business logic as reducers within a pure function (or composition of functions).
+As a framework, Perhap allows you to consume incoming events in order to maintain domain models of your entities within a bounded context. Common tasks required within such a pattern are done by Perhap, so that the domain service is strictly responsible for maintaining the integrity of the model by applying business logic as reducers within a pure function (or composition of functions).
 
 Perhap is responsible for:
 
