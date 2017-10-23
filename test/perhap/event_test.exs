@@ -49,6 +49,10 @@ defmodule Perhap.EventTest do
     assert Perhap.Event.validate( %Perhap.Event{:metadata => %{}}) == {:invalid, "Invalid event struct"}
     assert Perhap.Event.validate(%Perhap.Event{}) == {:invalid, "Invalid event_id"}
     assert Perhap.Event.validate(PerhapTest.Helper.make_random_event(%Perhap.Event.Metadata{:entity_id => "not a UUIDv4"})) == {:invalid, "Invalid entity_id"}
+    event_with_context_not_set =
+      PerhapTest.Helper.make_random_event()
+      |> (fn x -> %Perhap.Event{x | metadata: %Perhap.Event.Metadata{x.metadata | context: nil}} end).()
+    assert Perhap.Event.validate(event_with_context_not_set) == {:invalid, "Context not set for event"}
   end
 
   test "validates a valid event" do
@@ -71,7 +75,7 @@ defmodule Perhap.EventTest do
 
   test "retrieves an event" do
     random_context = Enum.random([:k, :l, :m, :n, :o])
-    rando = make_random_event( 
+    rando = make_random_event(
       %Perhap.Event.Metadata{context: random_context} )
     Perhap.Event.save_event(rando)
     {:ok, result} = Perhap.Event.retrieve_event(rando.event_id)
@@ -81,10 +85,10 @@ defmodule Perhap.EventTest do
   test "retrieves events by context and entity ID" do
     random_context = Enum.random([:p, :q, :r, :s, :t])
     random_entity_id = Perhap.Event.get_uuid_v4()
-    rando1 = make_random_event( 
+    rando1 = make_random_event(
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )
     Perhap.Event.save_event(rando1)
-    rando2 = make_random_event( 
+    rando2 = make_random_event(
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )
     Perhap.Event.save_event(rando2)
     {:ok, [result1, result2]} = Perhap.Event.retrieve_events(random_context, entity_id: random_entity_id)
@@ -95,10 +99,10 @@ defmodule Perhap.EventTest do
   test "retrieves events by context" do
     random_context = Enum.random([:u, :v, :w, :x, :y])
     random_entity_id = Perhap.Event.get_uuid_v4()
-    rando1 = make_random_event( 
+    rando1 = make_random_event(
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )
     Perhap.Event.save_event(rando1)
-    rando2 = make_random_event( 
+    rando2 = make_random_event(
       %Perhap.Event.Metadata{context: random_context, entity_id: random_entity_id} )
     Perhap.Event.save_event(rando2)
     {:ok, [result1, result2]} = Perhap.Event.retrieve_events(random_context)
@@ -109,7 +113,7 @@ defmodule Perhap.EventTest do
   test "returns an empty list if events don't exist" do
     assert Perhap.Event.retrieve_events(:z) == {:ok, []}
     random_entity_id = Perhap.Event.get_uuid_v4()
-    rando = make_random_event( 
+    rando = make_random_event(
       %Perhap.Event.Metadata{context: :z, entity_id: random_entity_id} )
     Perhap.Event.save_event(rando)
     assert Perhap.Event.retrieve_events(:z, entity_id: Perhap.Event.get_uuid_v4) == {:ok, []}
@@ -128,7 +132,7 @@ defmodule Perhap.EventTest do
                       make_random_event(%Perhap.Event.Metadata{context: :aa, event_id: ev, entity_id: random_entity})
                     end)
     random_events |> Enum.each(fn(event) -> Perhap.Event.save_event(event) end)
-    [ ev1 | [ ev2 | _ ] ] = random_event_ids |> Enum.reverse
+    [ _ev1 | [ _ev2 | _ ] ] = random_event_ids |> Enum.reverse
     #first_event = Perhap.Event.retrieve_events(:aa, entity_id: random_entity, after: ev2)
   end
 

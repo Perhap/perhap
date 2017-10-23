@@ -50,12 +50,14 @@ defmodule PerhapTest.Helper do
   def make_random_event(), do: make_random_event(%Perhap.Event.Metadata{})
   def make_random_event(%Perhap.Event.Metadata{} = metadata) do
     event_id = metadata.event_id || Perhap.Event.get_uuid_v1()
+    context = metadata.context || :test
     %Perhap.Event{
       event_id: event_id,
       data: %{:random_number => :rand.uniform(1000)},
       metadata: %{
         metadata |
           event_id: event_id,
+          context: context,
           entity_id: metadata.entity_id || Perhap.Event.get_uuid_v4(),
           type: metadata.type || :random_event,
           timestamp: metadata.timestamp || Perhap.Event.timestamp() }

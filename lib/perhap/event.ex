@@ -56,6 +56,7 @@ defmodule Perhap.Event do
       if !is_uuid_v1?(event_id), do: raise("Invalid event_id")
       if !is_uuid_v4?(metadata.entity_id), do: raise("Invalid entity_id")
       if !is_atom(metadata.context), do: raise("Invalid context")
+      if metadata.context == :nil, do: raise("Context not set for event")
       :ok
     rescue
       MatchError -> {:invalid, "Invalid event struct"}
@@ -96,7 +97,7 @@ defmodule Perhap.Event do
   # Timestamps and unique integers
   @spec timestamp() :: integer
   def timestamp(), do: System.system_time(:microseconds)
-  
+
   @spec unique_integer() :: integer
   def unique_integer(), do: System.unique_integer([:monotonic])
 
