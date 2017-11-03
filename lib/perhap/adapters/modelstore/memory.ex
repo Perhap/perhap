@@ -20,8 +20,10 @@ defmodule Perhap.Adapters.Modelstore.Memory do
   def put_model({entity_id, service}, version, model) do
     Agent.update(__MODULE__,
                 fn %__MODULE__{modelstore: store, events: events, config: config} ->
-                  store_val = Map.get(store, {entity_id, service}, [versions: [], current_events: []])
-                  store_val = [versions: Enum.map(store_val[:versions], fn {^version, old_model, ledger} -> {^version, model, ledger}, {not_version, old_model, ledger} -> {not_version, old_model, ledger} end), current_events: store_val[:current_events]]
+                  store_val = Map.get(store, {entity_id, service}, [versions: %{}, current_events: []])
+                  versions = store_val[:versions]
+                  {_old_model, ledger} = Map.get(versions, version, {:model, []})
+                  store_val = [versions: Map.put(versions, version, {model, ledger}), current_events: store_val[:current_events]]
                   updated_store = Map.put(store, {entity_id, service}, store_val)
                   %__MODULE__{modelstore: updated_store, events: events, config: config}
                 end )
