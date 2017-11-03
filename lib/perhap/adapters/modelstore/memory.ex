@@ -8,8 +8,8 @@ defmodule Perhap.Adapters.Modelstore.Memory do
   @type key :: { Perhap.Event.UUIDv4.t | :single, module() }
   @type value :: [ versions: list(model_instance), current_events: list(Perhap.Event.t) ]
   @type store :: %{ required(key) => value }
-  @type t :: [ modelstore: modelstore, 
-  defstruct modelstore: [], events: [], config: %{}
+  @type t :: [ modelstore: store, events: list(Perhap.Event.t), config: %{} ]
+  defstruct modelstore: %{}, events: [], config: %{}
 
   @spec start_link(opts: any()) ::   {:ok, pid} | :ignore | {:error, {:already_started, pid} | term}
   def start_link(_opts) do
@@ -18,9 +18,32 @@ defmodule Perhap.Adapters.Modelstore.Memory do
 
   @spec put_model({Perhap.Event.UUIDv4.t | :single, module()}, Perhap.Event.UUIDv1.t, any()) :: :ok | {:error, term}
   def put_model({entity_id, service}, version, model) do
+    Agent.update(__MODULE__,
+                fn %__MODULE__{modelstore: store, events: events, config: config} ->
+                  store_val = Map.get(store, {entity_id, service}, [versions: [], current_events: []])
+                  store_val = [versions: Enum.map(store_val[:versions], fn {^version, old_model, ledger} -> {^version, model, ledger}, {not_version, old_model, ledger} -> {not_version, old_model, ledger} end), current_events: store_val[:current_events]]
+                  updated_store = Map.put(store, {entity_id, service}, store_val)
+                  %__MODULE__{modelstore: updated_store, events: events, config: config}
+                end )
+    :ok
   end
 
   @spec get_model({Perhap.Event.UUIDv4.t | :single, module()}, Perhap.Event.UUIDv1.t | nil) :: {:ok, any()} | {:error, term}
   def get_model({entity_id, service}, version \\ nil) do
+    Agent.get(__MODULE__,
+              fn %__MODULE__{modelstore: store, events: events, config: config} ->
+                case Map.get(store, {entity_id, service}) do
+                  nil ->
+                    {:error, "Model not found"}
+                  [versions: versions, current_events: current_events] ->
+                    case version do
+                      nil ->
+                        {:ok, versions}
+                      version ->
+                        {:ok, Enum.filter(versions, fn {ver_id, _model, _ledger} -> version == ver_id end)}
+                    end
+                end
+
+              end )
   end
 end
