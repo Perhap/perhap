@@ -1,5 +1,5 @@
 # perhap
-Perhap is an functional, rDDD (reactive domain driven design) event store and service framework.
+Perhap is a functional, rDDD (reactive domain driven design) event store and service framework.
 
 ## Project status
 
