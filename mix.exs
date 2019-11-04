@@ -2,9 +2,7 @@ defmodule Perhap.Mixfile do
   use Mix.Project
   require Logger
 
-  @version "0.0.1-dev"
-  # {:ok, system_version} = Version.parse(System.version)
-  # @elixir_version "#{system_version.major}.#{system_version.minor}.#{system_version.patch}"
+  @version "0.0.2-dev"
 
   def version do
     @version
@@ -15,7 +13,7 @@ defmodule Perhap.Mixfile do
      version: @version,
      description: description(),
      package: package(),
-     elixir: "~> 1.5",
+     elixir: "~> 1.9",
      build_per_environment: false,
      consolidate_protocols: Mix.env != :test,
      elixirc_paths: elixirc_paths(Mix.env),
@@ -31,19 +29,15 @@ defmodule Perhap.Mixfile do
   end
 
   defp deps do
-    [{:cowboy, github: "ninenines/cowboy"},
-     {:ranch, github: "ninenines/ranch", ref: "1.4.0", override: true},
-     {:cowlib, github: "ninenines/cowlib", ref: "2.0.0-rc.1", override: true},
-     {:poison, "~> 3.1"},
+    [{:poison, "~> 3.1"},
      {:uuid, github: "okeuday/uuid"},
-     {:gun, github: "ninenines/gun", ref: "1.0.0-pre.3", runtime: false},
-     {:libcluster, "~> 2.1"},
-     {:swarm, "~> 3.0"},
+     {:cowlib, github: "ninenines/cowlib", ref: "2.8.0", override: true},
+     {:gun, github: "ninenines/gun", runtime: false},
+     {:cowboy, github: "ninenines/cowboy", ref: "2.7.0"},
+     {:libcluster, "~> 3.1.1"},
+     {:swarm, "~> 3.4.0"},
      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
      {:ex_doc, "~> 0.15.0", only: :dev, runtime: false}]
-     # {:ranch, github: "ninenines/ranch", ref: "1.4.0", override: true},
-     # {:gun, github: "ninenines/gun", ref: "1.0.0-pre.3", runtime: false},
-     # {:snappy, github: "fdmanana/snappy-erlang-nif"},
   end
 
   defp description do

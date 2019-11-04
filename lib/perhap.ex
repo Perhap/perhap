@@ -5,7 +5,7 @@ defmodule Perhap do
   Perhap is a framework for building reactive systems using domain driven design ("reactive domain driven design" or "rDDD".)
 
   ## Usage
-  
+
   Include Perhap in your application:
 
   ```
@@ -38,7 +38,7 @@ defmodule Perhap do
   ```
 
   To interact with Perhap at a basic level:
-  
+
   * POST events to `http[s]://your_server.tld/your_context/your_event_type/your_entity_id/your_event_id`, where `your_context` is a context you've defined, `your_event_type` is an event type your domain service(s) care about, `your_entity_id` is a UUIDv4 identifier, and `your_event_id` is a UUIDv1 identifier.
   * GET models from `http[s]://your_server.tld/your_context/your_domain_service/your_entity_id`, where `your_context` is a context you've defined, `your_domain_service` is a domain service you specified, and `your_entity_id` is one of your UUIDv4 identifiers.
 
@@ -249,7 +249,7 @@ defmodule Perhap do
         ssl_opts       =  [ cacertfile:      config(:cacertfile),
                             certfile:        config(:certfile),
                             keyfile:         config(:keyfile),
-                            versions:        [ :'tlsv1.2', :'tlsv1.1', :'tlsv1' ] ]
+                            versions:        [ :'tlsv1.2', :'tlsv1.1', :tlsv1 ] ]
         protocol_opts  = %{ env:             %{ dispatch: :cowboy_router.compile([{:_, routes()}]) },
                             middlewares:     [ :cowboy_router, :cowboy_handler ],
                             stream_handlers: [ :cowboy_compress_h, :cowboy_stream_h] }
@@ -305,7 +305,7 @@ defmodule Perhap do
                                                                      handler: Perhap.EventHandler,
                                                                      opts: opts3 })
       end
-    end 
+    end
   end
 
   def make_get_event_routes(context, opts) do
